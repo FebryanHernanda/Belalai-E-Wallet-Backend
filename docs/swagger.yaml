@@ -38,6 +38,21 @@ definitions:
         example: false
         type: boolean
     type: object
+  models.Response:
+    properties:
+      code:
+        example: 200
+        type: integer
+      is_success:
+        example: true
+        type: boolean
+      message:
+        example: Example message success...
+        type: string
+      page:
+        example: 1
+        type: integer
+    type: object
 host: 127.0.0.1:2409
 info:
   contact: {}
