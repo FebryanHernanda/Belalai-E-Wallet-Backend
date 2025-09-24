@@ -12,6 +12,11 @@ type ErrorResponse struct {
 	Err string `json:"error" example:"Error message..."`
 }
 
+type ResponseData struct {
+	Response
+	Data interface{} `json:"data,omitempty"`
+}
+
 // ===================== { Example error response for swagger, not use } =====================
 
 type BadRequestResponse struct {

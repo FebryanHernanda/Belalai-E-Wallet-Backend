@@ -2,8 +2,11 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"log"
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -22,6 +25,10 @@ func (ar *AuthRepository) GetEmail(c context.Context, email string) (*models.Use
 
 	var user models.User
 	if err := ar.db.QueryRow(c, sql, email).Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, errors.New("user not found")
+		}
+		log.Println("Internal Server Error.\nCause: ", err.Error())
 		return nil, err
 	}
 	return &user, nil
