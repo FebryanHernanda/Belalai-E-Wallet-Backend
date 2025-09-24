@@ -1,0 +1,84 @@
+definitions:
+  models.AuthRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  models.AuthResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  models.BadRequestResponse:
+    properties:
+      code:
+        example: 400
+        type: integer
+      error:
+        example: Example bad request error...
+        type: string
+      is_success:
+        example: false
+        type: boolean
+    type: object
+  models.InternalErrorResponse:
+    properties:
+      code:
+        example: 500
+        type: integer
+      error:
+        example: Example Internal server error...
+        type: string
+      is_success:
+        example: false
+        type: boolean
+    type: object
+host: 127.0.0.1:2409
+info:
+  contact: {}
+  description: E-wallet team belalai
+  title: Belalai E-Wallet
+  version: "1.0"
+paths:
+  /auth:
+    post:
+      consumes:
+      - application/json
+      description: login using email and password and return as response with JWT
+        token
+      parameters:
+      - description: Input email and password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      summary: Login registered user
+      tags:
+      - login
+securityDefinitions:
+  JWTtoken:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
