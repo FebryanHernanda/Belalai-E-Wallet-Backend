@@ -8,6 +8,7 @@ import (
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
 	"github.com/Belalai-E-Wallet-Backend/internal/repository"
+	"github.com/Belalai-E-Wallet-Backend/internal/utils"
 	"github.com/Belalai-E-Wallet-Backend/pkg"
 	"github.com/gin-gonic/gin"
 )
@@ -125,7 +126,90 @@ func (a *AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 	// return token as response success
-	ctx.JSON(http.StatusOK, models.AuthResponse{
-		Token: jwtToken,
+	ctx.JSON(http.StatusOK, models.ResponseData{
+		Response: models.Response{
+			IsSuccess: true,
+			Code:      http.StatusOK,
+			Msg:       "login successfully",
+		},
+		Data: models.AuthResponse{
+			Token: jwtToken,
+		},
 	})
+}
+
+// Register
+// @Tags				/auth/register [POST]
+// @Summary 		Register new user
+// @Description	Register new user with input email & password
+// @Param				body		body 		 models.AuthRequest 	true		"Input email and password new user"
+// @accept			json
+// @produce			json
+// @failure 		400			{object} 	models.BadRequestResponse "Bad Request"
+// @failure 		500 		{object} 	models.InternalErrorResponse "Internal Server Error"
+// @success			200			{object}  models.Response
+func (a *AuthHandler) Register(ctx *gin.Context) {
+	var body models.AuthRequest
+
+	// Binding data and show if there is error when binding data
+	if err := ctx.ShouldBind(&body); err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      500,
+			},
+			Err: "Failed binding data ...",
+		})
+		return
+	}
+
+	// validate user register
+	if err := utils.RegisterValidation(body); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      400,
+			},
+			Err: err.Error(),
+		})
+		return
+	} else {
+		// hash new password
+		hc := pkg.NewHashConfig()
+		hc.UseRecommended()
+		hash, err := hc.GenHash(body.Password)
+		if err != nil {
+			log.Println("Failed hash new password ...", err)
+			ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Response: models.Response{
+					IsSuccess: false,
+					Code:      500,
+				},
+				Err: err.Error(),
+			})
+			return
+		}
+		// if inputs is already valid format,
+		// input and check if the email already registered
+		user := models.User{
+			Email:    body.Email,
+			Password: hash,
+		}
+		if err := a.ar.CreateAccount(ctx.Request.Context(), &user); err != nil {
+			log.Println("error cause: ", err)
+			ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+				Response: models.Response{
+					IsSuccess: false,
+					Code:      400,
+				},
+				Err: err.Error(),
+			})
+			return
+		}
+		ctx.JSON(http.StatusOK, models.Response{
+			IsSuccess: true,
+			Code:      200,
+			Msg:       "user register successfully",
+		})
+	}
 }
