@@ -1,0 +1,27 @@
+# Binaries
+bin/
+tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+main
+app
+
+# Logs
+*.log
+
+# Test output
+*.out
+coverage/
+
+# Env files
+.env
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# MacOS
+.DS_Store
