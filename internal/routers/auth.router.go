@@ -16,4 +16,7 @@ func InitAuthRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	authRouter.POST("", authHandler.Login)
 	authRouter.POST("/register", authHandler.Register)
 	authRouter.DELETE("", authHandler.Logout)
+	authRouter.PATCH("/update-pin", authHandler.UpdatePIN)
+	authRouter.PATCH("/change-pin", authHandler.ChangePIN)
+	authRouter.PATCH("/change-password", authHandler.ChangePassword)
 }
