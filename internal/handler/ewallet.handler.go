@@ -3,10 +3,10 @@ package handler
 import (
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
 	"github.com/Belalai-E-Wallet-Backend/internal/repository"
+	"github.com/Belalai-E-Wallet-Backend/internal/utils" // Import utils package
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,48 +19,39 @@ func NewEWalletHandler(er *repository.EwalletRepository) *EWalletHandler {
 }
 
 // GetBalance
-// @tags 				balance
-// @router 	 		/balance 	[POST]
+// @tags 			balance
+// @router 	 		/balance 	[GET]
 // @Summary 		Get user balance
-// @Description Get balance for a specific user by user_id
-// @Param 			body		body	 models.Balance  	true 		"Input user_id"
+// @Description 	Get balance for authenticated user
 // @accept 			json
 // @produce 		json
-// @failure 		400			{object} 	models.BadRequestResponse "Bad Request"
+// @Security 		BearerAuth
+// @failure 		401			{object} 	models.UnauthorizedResponse "Unauthorized"
+// @failure 		404			{object} 	models.NotFoundResponse "User Not Found"
 // @failure 		500 		{object} 	models.InternalErrorResponse "Internal Server Error"
 // @success 		200 		{object}  models.ResponseData "Success Response with Balance Data"
 func (e *EWalletHandler) GetBalance(ctx *gin.Context) {
-	var body models.Balance
-	if err := ctx.ShouldBindJSON(&body); err != nil {
-		log.Println("error when binding \ncause", err)
-		if strings.Contains(err.Error(), "required") {
-			ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
-				Response: models.Response{
-					IsSuccess: false,
-					Code:      400,
-				},
-				Err: "user_id cannot be empty",
-			})
-			return
-		}
-		log.Println("Internal Server Error.\nCause: ", err.Error())
-		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+	// Get user ID from JWT token in context
+	userID, err := utils.GetUserFromCtx(ctx)
+	if err != nil {
+		log.Println("Error getting user from context.\nCause: ", err.Error())
+		ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
 			Response: models.Response{
 				IsSuccess: false,
-				Code:      500,
+				Code:      401,
 			},
-			Err: "Internal Server Error",
+			Err: "Unauthorized: " + err.Error(),
 		})
 		return
 	}
 
-	// Get balance from repository
-	balance, err := e.er.GetBalance(ctx, body.User_id)
+	// Get balance from repository using user ID from token
+	balance, err := e.er.GetBalance(ctx, userID)
 	if err != nil {
 		log.Println("Error getting balance from repository.\nCause: ", err.Error())
 
 		// Check if user not found
-		if err.Error() == "user_id not found" {
+		if err.Error() == "user id not found" {
 			ctx.JSON(http.StatusNotFound, models.ErrorResponse{
 				Response: models.Response{
 					IsSuccess: false,
