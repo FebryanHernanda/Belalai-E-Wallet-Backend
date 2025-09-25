@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
@@ -24,7 +23,7 @@ func NewProfileRepository(db *pgxpool.Pool) *ProfileRepository {
 
 func (pr *ProfileRepository) GetProfile(c context.Context, userId int) (*models.Profile, error) {
 	sql := `
-		select users_id, profile_picture, fullname, phone, created_at, updated_at from profile where user_id = $1
+		select user_id, profile_picture, fullname, phone, created_at, updated_at from profile where user_id = $1
 	`
 
 	var p models.Profile
@@ -32,7 +31,6 @@ func (pr *ProfileRepository) GetProfile(c context.Context, userId int) (*models.
 		if err == pgx.ErrNoRows {
 			return nil, errors.New("profile not found")
 		}
-		log.Println("Internal server error.\nCause:", err.Error())
 		return nil, err
 	}
 
@@ -53,7 +51,7 @@ func (pr *ProfileRepository) UpdateProfile(c context.Context, profile *models.Pr
 		}
 	}
 
-	setClauses := []string{"updated_at = now()"}
+	setClauses := []string{}
 	args := []interface{}{}
 	argPos := 1
 
@@ -73,12 +71,16 @@ func (pr *ProfileRepository) UpdateProfile(c context.Context, profile *models.Pr
 		argPos++
 	}
 
-	query := "UPDATE profile SET " + strings.Join(setClauses, ", ")
-	query += fmt.Sprintf(" WHERE users_id = $%d", argPos)
-	args = append(args, profile.UserID)
+	if len(setClauses) > 0 {
+		setClauses = append(setClauses, "updated_at = now()")
 
-	if _, err := tx.Exec(c, query, args...); err != nil {
-		return err
+		query := "UPDATE profile SET " + strings.Join(setClauses, ", ")
+		query += fmt.Sprintf(" WHERE user_id = $%d", argPos)
+		args = append(args, profile.UserID)
+
+		if _, err := tx.Exec(c, query, args...); err != nil {
+			return err
+		}
 	}
 
 	if err := tx.Commit(c); err != nil {
@@ -88,14 +90,8 @@ func (pr *ProfileRepository) UpdateProfile(c context.Context, profile *models.Pr
 	return nil
 }
 
-func (pr *ProfileRepository) UpdateAvatar(c context.Context, profile *models.Profile) error {
-	qUpdatePIN := "update profile set profile_picture = $1, updated_at = now() where users_id = $2"
-	_, err := pr.db.Exec(c, qUpdatePIN, profile.ProfilePicture, profile.UserID)
-	return err
-}
-
 func (pr *ProfileRepository) DeleteAvatar(c context.Context, userId int) error {
-	qDeleteAvatar := "update profile set profile_picture = null, updated_at = now() where users_id = $2"
+	qDeleteAvatar := "update profile set profile_picture = null, updated_at = now() where user_id = $1"
 	_, err := pr.db.Exec(c, qDeleteAvatar, userId)
 	return err
 }
