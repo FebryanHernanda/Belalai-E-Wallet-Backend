@@ -1,5 +1,5 @@
 CREATE TABLE profile (
-    users_id INT PRIMARY KEY,
+    user_id INT PRIMARY KEY,
     profile_picture VARCHAR(255),
     fullname VARCHAR(255),
     phone VARCHAR(20),
