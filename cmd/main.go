@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -17,7 +18,7 @@ import (
 // @in header
 // @name Authorization
 func main() {
-
+	// Inisialization databae for this project
 	db, err := configs.InitDB()
 	if err != nil {
 		log.Println("FAILED TO CONNECT DB")
@@ -34,14 +35,17 @@ func main() {
 
 	log.Println("DB CONNECTED")
 
-	// manual load ENV
-
-	// Inisialization databae for this project
-
 	// inisialization redish
+	rdb := configs.InitRedis()
+	cmd := rdb.Ping(context.Background())
+	if cmd.Err() != nil {
+		log.Println("failed ping on redis \nCause:", cmd.Err().Error())
+		return
+	}
+	log.Println("Redis Connected")
+	defer rdb.Close()
 
 	// Inisialization engine gin, HTTP framework
-	// !NEED DB
-	router := routers.InitRouter(db)
+	router := routers.InitRouter(db, rdb)
 	router.Run(":2409")
 }
