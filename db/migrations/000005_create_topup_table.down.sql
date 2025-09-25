@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS topup;
+DROP TYPE IF EXISTS topup_status;

@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS transfer;
+DROP TYPE IF EXISTS transfer_status_enum;
