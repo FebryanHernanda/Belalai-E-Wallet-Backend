@@ -71,7 +71,7 @@ func VerifyToken(rdb *redis.Client) gin.HandlerFunc {
 			})
 			return
 		}
-		ctx.Set("claims", claims)
+		ctx.Set("claims", &claims)
 		ctx.Next()
 	}
 }
