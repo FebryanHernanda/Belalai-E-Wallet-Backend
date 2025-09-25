@@ -13,10 +13,10 @@ type Profile struct {
 }
 
 type ProfileRequest struct {
-	Fullname       *string
-	Phone          *string
-	ProfilePicture *string
-	Email          *string
+	Fullname       *string `json:"fullname" form:"fullname"`
+	Phone          *string `json:"phone" form:"phone"`
+	ProfilePicture *string `json:"profile_picture" form:"profile_picture"`
+	Email          *string `json:"email" form:"email"`
 }
 
 type ProfileResponse struct {

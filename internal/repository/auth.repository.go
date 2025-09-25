@@ -6,17 +6,21 @@ import (
 	"log"
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
+	"github.com/Belalai-E-Wallet-Backend/internal/utils"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type AuthRepository struct {
-	db *pgxpool.Pool
+	db  *pgxpool.Pool
+	rdb *redis.Client
 }
 
-func NewAuthRepository(db *pgxpool.Pool) *AuthRepository {
+func NewAuthRepository(db *pgxpool.Pool, rdb *redis.Client) *AuthRepository {
 	return &AuthRepository{
-		db: db,
+		db:  db,
+		rdb: rdb,
 	}
 }
 
@@ -69,6 +73,7 @@ func (ar *AuthRepository) CreateAccount(c context.Context, user *models.User) er
 	return nil
 }
 
+// VerifyPassword: get hashed password by userId
 func (ar *AuthRepository) VerifyPassword(c context.Context, userId int) (string, error) {
 	var hashedPassword string
 	sql := `SELECT password FROM users WHERE id = $1`
@@ -82,12 +87,14 @@ func (ar *AuthRepository) VerifyPassword(c context.Context, userId int) (string,
 	return hashedPassword, nil
 }
 
+// UpdatePassword: update user password
 func (ar *AuthRepository) UpdatePassword(c context.Context, userId int, hashedPassword string) error {
 	sql := `UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2`
 	_, err := ar.db.Exec(c, sql, hashedPassword, userId)
 	return err
 }
 
+// VerifyPIN: get hashed pin by userId
 func (ar *AuthRepository) VerifyPIN(c context.Context, userId int) (string, error) {
 	var hashedPIN string
 	sql := `SELECT pin FROM users WHERE id = $1`
@@ -100,8 +107,20 @@ func (ar *AuthRepository) VerifyPIN(c context.Context, userId int) (string, erro
 	return hashedPIN, nil
 }
 
+// UpdatePIN: update user pin
 func (ar *AuthRepository) UpdatePIN(c context.Context, userId int, hashedPin string) error {
 	sql := `UPDATE users SET pin = $1, updated_at = NOW() WHERE id = $2`
 	_, err := ar.db.Exec(c, sql, hashedPin, userId)
 	return err
+}
+
+// BlacklistToken: blacklist user token (logout)
+func (ar *AuthRepository) BlacklistToken(c context.Context, token string) error {
+	// use utils.BlackListTokenRedish for logout token
+	if err := utils.BlackListTokenRedish(c, *ar.rdb, token); err != nil {
+		log.Println("failed blacklist token, ", err)
+		return err
+	}
+	// is success return nil
+	return nil
 }

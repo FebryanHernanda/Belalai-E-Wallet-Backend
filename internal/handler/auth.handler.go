@@ -483,3 +483,34 @@ func (a *AuthHandler) UpdatePIN(ctx *gin.Context) {
 		Msg:       "PIN updated successfully",
 	})
 }
+
+// Logout
+// @Tags			logout
+// @Router			/auth [DELETE]
+// @Summary 		Logout user by blacklist their token
+// @Description	Logout user by blacklist their token on redis
+// @Security 		JWTtoken
+// @produce			json
+// @failure 		500 	{object} 	models.InternalErrorResponse "Internal Server Error"
+// @success			200 	{object}	models.Response
+func (a *AuthHandler) Logout(ctx *gin.Context) {
+	// get token user for logout
+	bearerToken := ctx.GetHeader("Authorization")
+
+	if err := a.ar.BlacklistToken(ctx.Request.Context(), bearerToken); err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      500,
+			},
+			Err: err.Error(),
+		})
+		return
+	} else {
+		ctx.JSON(http.StatusOK, models.Response{
+			IsSuccess: true,
+			Code:      200,
+			Msg:       "Logout successfully",
+		})
+	}
+}
