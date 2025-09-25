@@ -214,6 +214,276 @@ func (a *AuthHandler) Register(ctx *gin.Context) {
 	}
 }
 
+// ChangePassword
+// @Tags        auth
+// @Router      /auth/change-password [PUT]
+// @Summary     Change current user password
+// @Description Change the current user password by providing old password and new password
+// @Accept      json
+// @Produce     json
+// @Param       body  body      models.ChangePasswordRequest true "Old and New Password"
+// @Success     200   {object}  models.Response
+// @Failure     400   {object}  models.BadRequestResponse "Bad Request"
+// @Failure     401   {object}  models.ErrorResponse "Unauthorized"
+// @Failure     500   {object}  models.InternalErrorResponse "Internal Server Error"
+func (a *AuthHandler) ChangePassword(ctx *gin.Context) {
+	userId, err := utils.GetUserFromCtx(ctx)
+	if err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusUnauthorized,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	var body models.ChangePasswordRequest
+	if err := ctx.ShouldBind(&body); err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	pwdFromDB, err := a.ar.VerifyPassword(ctx, userId)
+	if err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	hashConfig := pkg.NewHashConfig()
+	ok, _ := hashConfig.CompareHashAndPassword(body.OldPassword, pwdFromDB)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusUnauthorized,
+			},
+			Err: "invalid old password",
+		})
+		return
+	}
+
+	hashConfig.UseRecommended()
+	hashedPwd, err := hashConfig.GenHash(body.NewPassword)
+	if err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	if err := a.ar.UpdatePassword(ctx, userId, hashedPwd); err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, models.Response{
+		IsSuccess: true,
+		Code:      http.StatusOK,
+		Msg:       "Password changed successfully",
+	})
+}
+
+// ChangePIN
+// @Tags        auth
+// @Router      /auth/change-pin [PUT]
+// @Summary     Change current user PIN
+// @Description Change the current user PIN by providing old PIN and new PIN (min 6 characters)
+// @Accept      json
+// @Produce     json
+// @Param       body  body      models.ChangePINRequest true "Old and New PIN"
+// @Success     200   {object}  models.Response
+// @Failure     400   {object}  models.BadRequestResponse "Bad Request"
+// @Failure     401   {object}  models.ErrorResponse "Unauthorized"
+// @Failure     500   {object}  models.InternalErrorResponse "Internal Server Error"
+func (a *AuthHandler) ChangePIN(ctx *gin.Context) {
+	userId, err := utils.GetUserFromCtx(ctx)
+	if err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusUnauthorized,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	var body models.ChangePINRequest
+	if err := ctx.ShouldBind(&body); err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	pinDB, err := a.ar.VerifyPIN(ctx, userId)
+	if err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	hashConfig := pkg.NewHashConfig()
+	ok, _ := hashConfig.CompareHashAndPassword(body.OldPIN, pinDB)
+	if !ok {
+		ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusUnauthorized,
+			},
+			Err: "invalid old pin",
+		})
+		return
+	}
+
+	hashConfig.UseRecommended()
+	hashedPin, err := hashConfig.GenHash(body.NewPIN)
+	if err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	if err := a.ar.UpdatePIN(ctx, userId, hashedPin); err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, models.Response{
+		IsSuccess: true,
+		Code:      http.StatusOK,
+		Msg:       "PIN changed successfully",
+	})
+}
+
+// UpdatePIN
+// @Tags        auth
+// @Router      /auth/update-pin [PUT]
+// @Summary     Update current user PIN directly
+// @Description Update the current user PIN directly without old PIN (min 6 characters)
+// @Accept      json
+// @Produce     json
+// @Param       body  body      models.SetPINRequest true "New PIN"
+// @Success     200   {object}  models.Response
+// @Failure     400   {object}  models.BadRequestResponse "Bad Request"
+// @Failure     401   {object}  models.ErrorResponse "Unauthorized"
+// @Failure     500   {object}  models.InternalErrorResponse "Internal Server Error"
+func (a *AuthHandler) UpdatePIN(ctx *gin.Context) {
+	userId, err := utils.GetUserFromCtx(ctx)
+	if err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusUnauthorized,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	var body models.SetPINRequest
+	if err := ctx.ShouldBind(&body); err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	hashConfig := pkg.NewHashConfig()
+	hashConfig.UseRecommended()
+
+	hashedPin, err := hashConfig.GenHash(body.PIN)
+	if err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	if err := a.ar.UpdatePIN(ctx, userId, hashedPin); err != nil {
+		log.Println("error cause: ", err)
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, models.Response{
+		IsSuccess: true,
+		Code:      http.StatusOK,
+		Msg:       "PIN updated successfully",
+	})
+}
+
 // Logout
 // @Tags			logout
 // @Router			/auth [DELETE]
@@ -222,7 +492,7 @@ func (a *AuthHandler) Register(ctx *gin.Context) {
 // @Security 		JWTtoken
 // @produce			json
 // @failure 		500 	{object} 	models.InternalErrorResponse "Internal Server Error"
-// @success			200 	{object}	models.
+// @success			200 	{object}	models.Response
 func (a *AuthHandler) Logout(ctx *gin.Context) {
 	// get token user for logout
 	bearerToken := ctx.GetHeader("Authorization")

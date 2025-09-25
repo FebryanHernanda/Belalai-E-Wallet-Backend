@@ -47,26 +47,77 @@ func (ar *AuthRepository) CreateAccount(c context.Context, user *models.User) er
 
 	qInsertIntoUser := "insert into users (email, password, created_at) values ($1, $2, now()) returning id"
 	if err = tx.QueryRow(c, qInsertIntoUser, user.Email, user.Password).Scan(&user.ID); err != nil {
+		log.Println(err.Error())
 		return err
 	}
 
 	qInsertIntoProfile := "insert into profile (user_id, created_at) values ($1, now())"
 	_, err = tx.Exec(c, qInsertIntoProfile, user.ID)
 	if err != nil {
+		log.Println(err.Error())
+		return err
+	}
+
+	qInsertIntoWallet := "insert into wallets (user_id, created_at) values ($1, now())"
+	_, err = tx.Exec(c, qInsertIntoWallet, user.ID)
+	if err != nil {
+		log.Println(err.Error())
 		return err
 	}
 
 	if err := tx.Commit(c); err != nil {
+		log.Println(err.Error())
 		return err
 	}
 
 	return nil
 }
 
-// blacklist token user (logout)
-func (a *AuthRepository) BlacklistToken(c context.Context, token string) error {
-	// use utils.BlacklistToken for logout token
-	if err := utils.BlackListTokenRedish(c, *a.rdb, token); err != nil {
+// VerifyPassword: get hashed password by userId
+func (ar *AuthRepository) VerifyPassword(c context.Context, userId int) (string, error) {
+	var hashedPassword string
+	sql := `SELECT password FROM users WHERE id = $1`
+
+	err := ar.db.QueryRow(c, sql, userId).Scan(&hashedPassword)
+	if err != nil {
+		log.Println(err.Error())
+		return "", err
+	}
+
+	return hashedPassword, nil
+}
+
+// UpdatePassword: update user password
+func (ar *AuthRepository) UpdatePassword(c context.Context, userId int, hashedPassword string) error {
+	sql := `UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2`
+	_, err := ar.db.Exec(c, sql, hashedPassword, userId)
+	return err
+}
+
+// VerifyPIN: get hashed pin by userId
+func (ar *AuthRepository) VerifyPIN(c context.Context, userId int) (string, error) {
+	var hashedPIN string
+	sql := `SELECT pin FROM users WHERE id = $1`
+
+	err := ar.db.QueryRow(c, sql, userId).Scan(&hashedPIN)
+	if err != nil {
+		return "", err
+	}
+
+	return hashedPIN, nil
+}
+
+// UpdatePIN: update user pin
+func (ar *AuthRepository) UpdatePIN(c context.Context, userId int, hashedPin string) error {
+	sql := `UPDATE users SET pin = $1, updated_at = NOW() WHERE id = $2`
+	_, err := ar.db.Exec(c, sql, hashedPin, userId)
+	return err
+}
+
+// BlacklistToken: blacklist user token (logout)
+func (ar *AuthRepository) BlacklistToken(c context.Context, token string) error {
+	// use utils.BlackListTokenRedish for logout token
+	if err := utils.BlackListTokenRedish(c, *ar.rdb, token); err != nil {
 		log.Println("failed blacklist token, ", err)
 		return err
 	}
