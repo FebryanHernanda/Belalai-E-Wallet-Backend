@@ -5,5 +5,5 @@ CREATE TABLE profile (
     phone VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_profile_users FOREIGN KEY (users_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_profile_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
