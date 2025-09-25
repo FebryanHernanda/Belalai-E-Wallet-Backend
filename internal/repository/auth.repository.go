@@ -6,17 +6,21 @@ import (
 	"log"
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
+	"github.com/Belalai-E-Wallet-Backend/internal/utils"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type AuthRepository struct {
-	db *pgxpool.Pool
+	db  *pgxpool.Pool
+	rdb *redis.Client
 }
 
-func NewAuthRepository(db *pgxpool.Pool) *AuthRepository {
+func NewAuthRepository(db *pgxpool.Pool, rdb *redis.Client) *AuthRepository {
 	return &AuthRepository{
-		db: db,
+		db:  db,
+		rdb: rdb,
 	}
 }
 
@@ -56,5 +60,16 @@ func (ar *AuthRepository) CreateAccount(c context.Context, user *models.User) er
 		return err
 	}
 
+	return nil
+}
+
+// blacklist token user (logout)
+func (a *AuthRepository) BlacklistToken(c context.Context, token string) error {
+	// use utils.BlacklistToken for logout token
+	if err := utils.BlackListTokenRedish(c, *a.rdb, token); err != nil {
+		log.Println("failed blacklist token, ", err)
+		return err
+	}
+	// is success return nil
 	return nil
 }
