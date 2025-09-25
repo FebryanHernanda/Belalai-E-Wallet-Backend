@@ -216,7 +216,7 @@ func (a *AuthHandler) Register(ctx *gin.Context) {
 
 // ChangePassword
 // @Tags        auth
-// @Router      /auth/change-password [PUT]
+// @Router      /auth/change-password [PATCH]
 // @Summary     Change current user password
 // @Description Change the current user password by providing old password and new password
 // @Accept      json
@@ -314,7 +314,7 @@ func (a *AuthHandler) ChangePassword(ctx *gin.Context) {
 
 // ChangePIN
 // @Tags        auth
-// @Router      /auth/change-pin [PUT]
+// @Router      /auth/change-pin [PATCH]
 // @Summary     Change current user PIN
 // @Description Change the current user PIN by providing old PIN and new PIN (min 6 characters)
 // @Accept      json
@@ -412,7 +412,7 @@ func (a *AuthHandler) ChangePIN(ctx *gin.Context) {
 
 // UpdatePIN
 // @Tags        auth
-// @Router      /auth/update-pin [PUT]
+// @Router      /auth/update-pin [PATCH]
 // @Summary     Update current user PIN directly
 // @Description Update the current user PIN directly without old PIN (min 6 characters)
 // @Accept      json
