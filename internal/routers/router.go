@@ -27,6 +27,8 @@ func InitRouter(db *pgxpool.Pool, rdb *redis.Client) *gin.Engine {
 
 	InitTransactionRouter(router, db, rdb)
 
+	InitProfileRouter(router, db, rdb)
+
 	// make directori public accesible
 	router.Static("/img", "public")
 	return router
