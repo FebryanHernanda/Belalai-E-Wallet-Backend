@@ -95,7 +95,16 @@ func (ph *ProfileHandler) UpdateProfile(c *gin.Context) {
 	var profilePic *string
 	file, err := c.FormFile("profile_picture")
 	if err == nil {
-		if filename := utils.FileUpload(c, file, "avatar"); filename != "" {
+		if filename, err := utils.FileUpload(c, file, "avatar"); err != nil {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{
+				Response: models.Response{
+					IsSuccess: false,
+					Code:      http.StatusBadRequest,
+				},
+				Err: err.Error(),
+			})
+			return
+		} else {
 			profilePic = &filename
 		}
 	}
