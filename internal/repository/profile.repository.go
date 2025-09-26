@@ -23,11 +23,21 @@ func NewProfileRepository(db *pgxpool.Pool) *ProfileRepository {
 
 func (pr *ProfileRepository) GetProfile(c context.Context, userId int) (*models.Profile, error) {
 	sql := `
-		select user_id, profile_picture, fullname, phone, created_at, updated_at from profile where user_id = $1
+		SELECT 
+				p.user_id,
+				p.profile_picture,
+				p.fullname,
+				p.phone,
+				u.email,
+				p.created_at,
+				p.updated_at
+		FROM profile p
+		JOIN users u ON u.id = p.user_id
+		WHERE p.user_id = $1;
 	`
 
 	var p models.Profile
-	if err := pr.db.QueryRow(c, sql, userId).Scan(&p.UserID, &p.ProfilePicture, &p.Fullname, &p.Phone, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	if err := pr.db.QueryRow(c, sql, userId).Scan(&p.UserID, &p.ProfilePicture, &p.Fullname, &p.Phone, &p.Email, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, errors.New("profile not found")
 		}

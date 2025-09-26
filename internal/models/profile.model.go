@@ -10,7 +10,7 @@ type Profile struct {
 	Fullname       *string    `db:"fullname"`
 	Phone          *string    `db:"phone"`
 	ProfilePicture *string    `db:"profile_picture"`
-	Email          *string    `db:"-"`
+	Email          *string    `db:"email"`
 	CreatedAt      time.Time  `db:"created_at"`
 	UpdatedAt      *time.Time `db:"updated_at"`
 }
@@ -27,6 +27,7 @@ type ProfileResponse struct {
 	Fullname       *string    `json:"fullname"`
 	Phone          *string    `json:"phone"`
 	ProfilePicture *string    `json:"profile_picture"`
+	Email          string     `json:"email"`
 	CreatedAt      *time.Time `json:"created_at"`
 	UpdatedAt      *time.Time `json:"updated_at"`
 }
