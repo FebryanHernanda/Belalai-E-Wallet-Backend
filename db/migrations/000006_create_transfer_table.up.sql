@@ -9,5 +9,5 @@ CREATE TABLE transfer (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted_by_sender BOOLEAN DEFAULT FALSE,
-    deleted_by_receiver BOOLEAN DEFAULT FALSE;
+    deleted_by_receiver BOOLEAN DEFAULT FALSE
 );
