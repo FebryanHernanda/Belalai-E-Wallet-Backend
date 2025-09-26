@@ -3,11 +3,16 @@ package models
 import "time"
 
 type TransferBody struct {
-	IdReceiver    int    `json:"receiver_id"`
-	ReceiverPhone int    `json:"receiver_phone"`
-	Amount        int    `json:"amount"`
-	Notes         string `json:"notes"`
-	PinSender     int    `json:"pin_sender"`
+	IdReceiver    int    `json:"receiver_id" binding:"required"`
+	ReceiverPhone int    `json:"receiver_phone" binding:"required"`
+	Amount        int    `json:"amount" binding:"required"`
+	Notes         string `json:"notes" binding:"required"`
+	PinSender     string `json:"pin_sender" binding:"required,min=6"`
+}
+
+type UserPin struct {
+	Id  int    `db:"id"`
+	Pin string `db:"pin"`
 }
 
 type TransferResponse struct {

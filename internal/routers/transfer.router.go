@@ -15,4 +15,5 @@ func InitTransferRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client)
 	uh := handler.NewTransferHandler(transferRepository)
 
 	transferRouter.GET("", middleware.VerifyToken(rdb), uh.FilterUser)
+	transferRouter.POST("", middleware.VerifyToken(rdb), uh.TranferBalance)
 }
