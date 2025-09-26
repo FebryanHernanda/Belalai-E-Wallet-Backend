@@ -58,6 +58,7 @@ func (ph *ProfileHandler) GetProfile(c *gin.Context) {
 			Fullname:       profile.Fullname,
 			Phone:          profile.Phone,
 			ProfilePicture: profile.ProfilePicture,
+			Email:          *profile.Email,
 			CreatedAt:      &profile.CreatedAt,
 			UpdatedAt:      profile.UpdatedAt,
 		},
@@ -94,8 +95,9 @@ func (ph *ProfileHandler) UpdateProfile(c *gin.Context) {
 	var profilePic *string
 	file, err := c.FormFile("profile_picture")
 	if err == nil {
-		filename := utils.FileUpload(c, file, "avatar")
-		profilePic = &filename
+		if filename := utils.FileUpload(c, file, "avatar"); filename != "" {
+			profilePic = &filename
+		}
 	}
 
 	profile := models.Profile{
