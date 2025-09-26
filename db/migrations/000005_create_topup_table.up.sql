@@ -1,4 +1,4 @@
-CREATE TYPE topup_status AS ENUM ('success', 'failed');
+CREATE TYPE topup_status AS ENUM ('success', 'failed', 'pending');
 CREATE TABLE topup (
     id SERIAL PRIMARY KEY,
     amount INT NOT NULL,
