@@ -1,0 +1,15 @@
+name: Build and publish a Docker image to ghcr
+on: []
+
+jobs:
+  Build-and-publish:
+    runs-on: "ubuntu-24.04"
+    steps:
+      - name: checkout repository code
+        uses: actions/checkout@v5
+
+      - name: Build and publish a Docker image for ${{ github.repository }}
+        uses: macbre/push-to-ghcr@master
+        with:
+          image_name: ${{ github.repository }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -18,7 +18,7 @@ func NewTransactionRepository(db *pgxpool.Pool) *TransactionRepository {
 	return &TransactionRepository{db: db}
 }
 
-func (tr *TransactionRepository) GetHistory(ctx context.Context, userID int) ([]models.TransactionHistory, error) {
+func (tr *TransactionRepository) GetHistory(ctx context.Context, userID int, offset, limit int) ([]models.TransactionHistory, error) {
 	sql := `SELECT 
 		t.id,
 		CASE 
@@ -72,9 +72,10 @@ func (tr *TransactionRepository) GetHistory(ctx context.Context, userID int) ([]
 				WHEN w_receiver.user_id = $1 THEN t.deleted_by_receiver = FALSE
 			END
 		)
-	ORDER BY t.created_at DESC`
+	ORDER BY t.created_at DESC
+	LIMIT $2 OFFSET $3`
 
-	rows, err := tr.db.Query(ctx, sql, userID)
+	rows, err := tr.db.Query(ctx, sql, userID, limit, offset)
 	if err != nil {
 		log.Printf("Error querying transaction history: %v", err)
 		return nil, err
@@ -112,6 +113,31 @@ func (tr *TransactionRepository) GetHistory(ctx context.Context, userID int) ([]
 	}
 
 	return histories, nil
+}
+
+// GetHistoryCount - Get total count of transaction history for pagination
+func (tr *TransactionRepository) GetHistoryCount(ctx context.Context, userID int) (int, error) {
+	sql := `SELECT COUNT(*)
+	FROM transfer t
+	JOIN wallets w_sender ON t.sender_wallet_id = w_sender.id
+	JOIN wallets w_receiver ON t.receiver_wallet_id = w_receiver.id
+	WHERE 
+		(w_sender.user_id = $1 OR w_receiver.user_id = $1)
+		AND (
+			CASE 
+				WHEN w_sender.user_id = $1 THEN t.deleted_by_sender = FALSE
+				WHEN w_receiver.user_id = $1 THEN t.deleted_by_receiver = FALSE
+			END
+		)`
+
+	var count int
+	err := tr.db.QueryRow(ctx, sql, userID).Scan(&count)
+	if err != nil {
+		log.Printf("Error counting transaction history: %v", err)
+		return 0, err
+	}
+
+	return count, nil
 }
 
 // SoftDeleteTransaction - untuk soft delete transaksi
@@ -208,9 +234,9 @@ func (tr *TransactionRepository) GetTopupHistory(ctx context.Context, userID int
 }
 
 // GetAllHistory - untuk mendapatkan gabungan transfer dan topup history
-func (tr *TransactionRepository) GetAllHistory(ctx context.Context, userID int) ([]models.TransactionHistory, error) {
+func (tr *TransactionRepository) GetAllHistory(ctx context.Context, userID int, limit int, offset int) ([]models.TransactionHistory, error) {
 	// Get transfer history
-	transferHistory, err := tr.GetHistory(ctx, userID)
+	transferHistory, err := tr.GetHistory(ctx, userID, offset, limit)
 	if err != nil && err.Error() != "no transactions found" {
 		return nil, err
 	}
