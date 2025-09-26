@@ -1,4 +1,3 @@
-// handler/transaction.go (Updated)
 package handler
 
 import (
@@ -23,11 +22,13 @@ func NewTransactionHandler(tr *repository.TransactionRepository) *TransactionHan
 // GetTransactionHistory
 // @tags 			transaction
 // @router 			/transaction/history 	[GET]
-// @Summary 		Get user transaction history
-// @Description 	Get transaction history for authenticated user (excluding soft deleted)
+// @Summary 		Get user transaction history with pagination
+// @Description 	Get transaction history for authenticated user (excluding soft deleted) with pagination support
 // @accept 			json
 // @produce 		json
 // @Security 		BearerAuth
+// @param 			page 		query 		int 	false "Page number (default: 1)"
+// @param 			limit 		query 		int 	false "Items per page (default: 10)"
 // @failure 		401			{object} 	models.UnauthorizedResponse "Unauthorized"
 // @failure 		404			{object} 	models.NotFoundResponse "Transaction History Not Found"
 // @failure 		500 		{object} 	models.InternalErrorResponse "Internal Server Error"
@@ -46,17 +47,79 @@ func (th *TransactionHandler) GetTransactionHistory(ctx *gin.Context) {
 		return
 	}
 
-	histories, err := th.tr.GetHistory(ctx, userID)
+	// Parse pagination parameters
+	page, err := strconv.Atoi(ctx.Query("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(ctx.Query("limit"))
+	if err != nil || limit < 1 {
+		limit = 10 // default limit for transaction history
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	// Get total count first
+	totalCount, err := th.tr.GetHistoryCount(ctx, userID)
+	if err != nil {
+		log.Println("Error getting transaction history count.\nCause: ", err.Error())
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      500,
+			},
+			Err: "Failed to retrieve transaction history count",
+		})
+		return
+	}
+
+	// Calculate total pages
+	totalPages := 0
+	if limit > 0 && totalCount > 0 {
+		totalPages = (totalCount + limit - 1) / limit // Ceiling division
+	}
+
+	// If no transactions found at all
+	if totalCount == 0 {
+		ctx.JSON(http.StatusOK, models.ResponseData{
+			Response: models.Response{
+				IsSuccess: true,
+				Code:      200,
+				Msg:       "Get Transaction History Success",
+			},
+			Data: map[string]interface{}{
+				"transactions": []interface{}{},
+				"page":         page,
+				"limit":        limit,
+				"total":        totalCount,
+				"total_pages":  totalPages,
+			},
+		})
+		return
+	}
+
+	// Get transaction histories with pagination
+	histories, err := th.tr.GetHistory(ctx, userID, offset, limit)
 	if err != nil {
 		log.Println("Error getting transaction history from repository.\nCause: ", err.Error())
 
 		if err.Error() == "no transactions found" {
-			ctx.JSON(http.StatusNotFound, models.ErrorResponse{
+			// Return empty array for this page but with total count
+			ctx.JSON(http.StatusOK, models.ResponseData{
 				Response: models.Response{
-					IsSuccess: false,
-					Code:      404,
+					IsSuccess: true,
+					Code:      200,
+					Msg:       "Get Transaction History Success",
 				},
-				Err: "Transaction history not found",
+				Data: map[string]interface{}{
+					"transactions": []interface{}{},
+					"page":         page,
+					"limit":        limit,
+					"total":        totalCount,
+					"total_pages":  totalPages,
+				},
 			})
 			return
 		}
@@ -71,13 +134,20 @@ func (th *TransactionHandler) GetTransactionHistory(ctx *gin.Context) {
 		return
 	}
 
+	// Success response
 	ctx.JSON(http.StatusOK, models.ResponseData{
 		Response: models.Response{
 			IsSuccess: true,
-			Code:      http.StatusOK,
+			Code:      200,
 			Msg:       "Get Transaction History Success",
 		},
-		Data: histories,
+		Data: map[string]interface{}{
+			"transactions": histories,
+			"page":         page,
+			"limit":        limit,
+			"total":        totalCount,
+			"total_pages":  totalPages,
+		},
 	})
 }
 
@@ -107,7 +177,39 @@ func (th *TransactionHandler) GetAllTransactionHistory(ctx *gin.Context) {
 		return
 	}
 
-	histories, err := th.tr.GetAllHistory(ctx, userID)
+	page, err := strconv.Atoi(ctx.Query("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(ctx.Query("limit"))
+	if err != nil || limit < 1 {
+		limit = 10 // default limit for transaction history
+	}
+
+	// Calculate offset
+	offset := (page - 1) * limit
+
+	totalCount, err := th.tr.GetHistoryCount(ctx, userID)
+	if err != nil {
+		log.Println("Error getting transaction history count.\nCause: ", err.Error())
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      500,
+			},
+			Err: "Failed to retrieve transaction history count",
+		})
+		return
+	}
+
+	// Calculate total pages
+	totalPages := 0
+	if limit > 0 && totalCount > 0 {
+		totalPages = (totalCount + limit - 1) / limit // Ceiling division
+	}
+
+	histories, err := th.tr.GetAllHistory(ctx, userID, limit, offset)
 	if err != nil {
 		log.Println("Error getting all transaction history from repository.\nCause: ", err.Error())
 
@@ -138,7 +240,13 @@ func (th *TransactionHandler) GetAllTransactionHistory(ctx *gin.Context) {
 			Code:      http.StatusOK,
 			Msg:       "Get All Transaction History Success",
 		},
-		Data: histories,
+		Data: map[string]interface{}{
+			"transactions": histories,
+			"page":         page,
+			"limit":        limit,
+			"total":        totalCount,
+			"total_pages":  totalPages,
+		},
 	})
 }
 
