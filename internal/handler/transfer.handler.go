@@ -9,15 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserHandler struct {
-	urep *repository.UserRepository
+type TransferHandler struct {
+	transRep *repository.TransferRepository
 }
 
-func NewUserHandler(urep *repository.UserRepository) *UserHandler {
-	return &UserHandler{urep: urep}
+func NewTransferHandler(transRep *repository.TransferRepository) *TransferHandler {
+	return &TransferHandler{transRep: transRep}
 }
 
-func (u *UserHandler) FilterUser(ctx *gin.Context) {
+func (u *TransferHandler) FilterUser(ctx *gin.Context) {
 	// default get all user if query is empty
 	query := ctx.Query("search")
 	// Make pagenation using query LIMIT dan OFFSET
@@ -29,7 +29,7 @@ func (u *UserHandler) FilterUser(ctx *gin.Context) {
 	offset := (page - 1) * limit
 
 	// use / call repository filter user
-	users, err := u.urep.FilterUser(ctx.Request.Context(), query, offset, limit)
+	users, err := u.transRep.FilterUser(ctx.Request.Context(), query, offset, limit)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Response: models.Response{
