@@ -33,6 +33,8 @@ func InitRouter(db *pgxpool.Pool, rdb *redis.Client) *gin.Engine {
 
 	InitTopUpRouter(router, db, rdb)
 
+	InitChartRoouter(router, db, rdb)
+
 	// make directori public accesible
 	router.Static("/img", "public")
 	return router
