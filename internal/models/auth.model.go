@@ -53,3 +53,7 @@ type ResponseReset struct {
 	Token string `json:"token"`
 	Link  string `json:"link"`
 }
+
+type ConfirmPayment struct {
+	PIN string `json:"pin" form:"pin" binding:"required"`
+}

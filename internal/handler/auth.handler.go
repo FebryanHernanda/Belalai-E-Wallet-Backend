@@ -828,3 +828,60 @@ func (a *AuthHandler) ResetPIN(ctx *gin.Context) {
 		Msg:       "PIN reset successfully",
 	})
 }
+
+func (a *AuthHandler) ConfirmPIN(ctx *gin.Context) {
+	userId, err := utils.GetUserFromCtx(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusUnauthorized,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	var body models.ConfirmPayment
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	pinDB, err := a.ar.VerifyPIN(ctx, userId)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	hashConfig := pkg.NewHashConfig()
+	ok, err := hashConfig.CompareHashAndPassword(body.PIN, pinDB)
+	if err != nil || !ok {
+		ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusUnauthorized,
+			},
+			Err: "invalid pin",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, models.Response{
+		IsSuccess: true,
+		Code:      http.StatusOK,
+		Msg:       "PIN verified successfully, payment confirmed",
+	})
+}
