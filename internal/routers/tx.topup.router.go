@@ -15,6 +15,14 @@ func InitTopUpRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	topupHandler := handler.NewTopUpHandler(topupRepository)
 
 	topupRouter.GET("/methods", middleware.VerifyToken(rdb), topupHandler.GetPaymentMethods)
-	topupRouter.POST("", middleware.VerifyToken(rdb), topupHandler.CreateTopUp)
-	topupRouter.PATCH("/:id/success", middleware.VerifyToken(rdb), topupHandler.MarkTopUpSuccess)
+	// topupRouter.POST("", middleware.VerifyToken(rdb), topupHandler.CreateTopUp)
+	// topupRouter.PATCH("/:id/success", middleware.VerifyToken(rdb), topupHandler.MarkTopUpSuccess)
+
+	// {
+	// 	"amount": 100000,
+	// 	"tax": 2500,
+	// 	"payment_id": 2
+	// }
+	topupRouter.POST("", middleware.VerifyToken(rdb), topupHandler.CreateTopUpTransaction)
+
 }
