@@ -25,10 +25,10 @@ func NewAuthRepository(db *pgxpool.Pool, rdb *redis.Client) *AuthRepository {
 }
 
 func (ar *AuthRepository) GetEmail(c context.Context, email string) (*models.User, error) {
-	sql := "select id, email, password, created_at, updated_at from users where email = $1"
+	sql := "select id, email, password, pin, created_at, updated_at from users where email = $1"
 
 	var user models.User
-	if err := ar.db.QueryRow(c, sql, email).Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
+	if err := ar.db.QueryRow(c, sql, email).Scan(&user.ID, &user.Email, &user.Password, &user.Pin, &user.CreatedAt, &user.UpdatedAt); err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, errors.New("user not found")
 		}
