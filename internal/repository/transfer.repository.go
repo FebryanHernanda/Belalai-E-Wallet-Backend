@@ -111,7 +111,7 @@ func (ur *TransferRepository) GetHashedPin(rqCntxt context.Context, senderId int
 
 // transfer transaction
 var ErrNotEnoughBalance = errors.New("not enough balance for this transfer")
-var CantSendingToYourself = errors.New("can't sending money to yourself")
+var ErrCantSendingToYourself = errors.New("can't sending money to yourself")
 
 func (ur *TransferRepository) TransferMoney(rqCntxt context.Context, senderId int, body models.TransferBody) error {
 
@@ -138,14 +138,14 @@ func (ur *TransferRepository) TransferMoney(rqCntxt context.Context, senderId in
 		log.Println("Internal Server Error.\nCause: ", err.Error())
 		return err
 	}
+	// validate not sending money to self
+	if senderWalletID == body.IdReceiver {
+		return ErrCantSendingToYourself
+	}
+
 	// validate if sender balance is have enough money to do transfer
 	if senderBalance < float64(body.Amount) {
 		return ErrNotEnoughBalance
-	}
-
-	// validate not sending money to self
-	if senderWalletID == body.IdReceiver {
-		return CantSendingToYourself
 	}
 
 	// execute tranfser
