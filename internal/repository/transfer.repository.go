@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"math"
 	"time"
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
@@ -23,34 +24,45 @@ func NewTransferRepository(db *pgxpool.Pool, rdb *redis.Client) *TransferReposit
 }
 
 // filter user by name or phone number
-func (ur *TransferRepository) FilterUser(c context.Context, query string, offset, limit int) ([]models.ProfileResponse, error) {
+func (ur *TransferRepository) FilterUser(c context.Context, query string, offset, limit, page int) (models.ListprofileResponse, error) {
+
+	// Inisialisasi response
+	searchQuery := "%" + query + "%"
+	values := []any{searchQuery, limit, offset}
 
 	// Get cached filter user, before accesing database
 	// Get and renew cache only for page 1 only (offset 0)
 	rdbKey := "Belalai-E-wallet:filter-user"
 	if offset == 0 && query == "" {
-		cachedUser, err := utils.RedisGetData[[]models.ProfileResponse](c, *ur.rdb, rdbKey)
+		cachedUser, err := utils.RedisGetData[models.ListprofileResponse](c, *ur.rdb, rdbKey)
 		if err != nil {
 			log.Println("Redis error :", err)
-		} else if cachedUser != nil && len(*cachedUser) > 0 {
+		} else if cachedUser != nil && len(cachedUser.Users) > 0 {
 			return *cachedUser, nil
 		}
 	}
 
 	// if there is no key/ no cached data
 	// get filter user from database
+	// get total filtered user
+	countSql := `SELECT COUNT(user_id) FROM profile
+    WHERE fullname ILIKE $1 OR phone ILIKE $1`
+	var totalUser int
+	countErr := ur.db.QueryRow(c, countSql, searchQuery).Scan(&totalUser)
+	if countErr != nil {
+		// Tangani error, bisa jadi error umum atau NoRows, tapi COUNT() biasanya selalu mengembalikan 0 atau lebih.
+		log.Println("Error getting total user count:", countErr.Error())
+		return models.ListprofileResponse{}, countErr
+	}
+
+	// get filtered list user
 	sql := `SELECT user_id, profile_picture, fullname, phone FROM profile
     WHERE fullname ILIKE $1 OR phone ILIKE $1
 		LIMIT $2 OFFSET $3`
-
-	searchQuery := "%" + query + "%"
-	values := []any{searchQuery, limit, offset}
-
-	// query user
 	rows, err := ur.db.Query(c, sql, values...)
 	if err != nil {
 		log.Println("internal server error : ", err.Error())
-		return []models.ProfileResponse{}, err
+		return models.ListprofileResponse{}, err
 	}
 	defer rows.Close()
 
@@ -60,21 +72,30 @@ func (ur *TransferRepository) FilterUser(c context.Context, query string, offset
 		var user models.ProfileResponse
 		if err := rows.Scan(&user.UserID, &user.ProfilePicture, &user.Fullname, &user.Phone); err != nil {
 			log.Println("Scan Error, ", err.Error())
-			return []models.ProfileResponse{}, err
+			return models.ListprofileResponse{}, err
 		}
 		users = append(users, user)
+	}
+
+	// final response
+	finalResponse := models.ListprofileResponse{
+		Users:     users,
+		Page:      page,
+		Limit:     limit,
+		TotalUser: totalUser,
+		TotalPage: int(math.Ceil(float64(totalUser) / float64(limit))),
 	}
 
 	// make cache filter user after query data from database
 	// Get and renew cache only for page 1 only (offset 0)
 	if offset == 0 && query == "" {
-		if err := utils.RedisRenewData(c, *ur.rdb, rdbKey, users, 10*time.Minute); err != nil {
+		if err := utils.RedisRenewData(c, *ur.rdb, rdbKey, finalResponse, 10*time.Minute); err != nil {
 			log.Println("Failed to renew Redis cache:", err.Error())
 		}
 	}
 
 	// return users, and error nil if success
-	return users, nil
+	return finalResponse, nil
 }
 
 // get user pin for validate user on handler

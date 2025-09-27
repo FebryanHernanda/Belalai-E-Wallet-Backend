@@ -29,11 +29,11 @@ func (u *TransferHandler) FilterUser(ctx *gin.Context) {
 	if err != nil {
 		page = 1
 	}
-	limit := 20
+	limit := 10
 	offset := (page - 1) * limit
 
 	// use / call repository filter user
-	users, err := u.transRep.FilterUser(ctx.Request.Context(), query, offset, limit)
+	users, err := u.transRep.FilterUser(ctx.Request.Context(), query, offset, limit, page)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Response: models.Response{
@@ -50,7 +50,6 @@ func (u *TransferHandler) FilterUser(ctx *gin.Context) {
 		Response: models.Response{
 			IsSuccess: true,
 			Code:      http.StatusOK,
-			Page:      page,
 		},
 		Data: users,
 	})

@@ -31,3 +31,11 @@ type ProfileResponse struct {
 	CreatedAt      *time.Time `json:"created_at"`
 	UpdatedAt      *time.Time `json:"updated_at"`
 }
+
+type ListprofileResponse struct {
+	Users     []ProfileResponse `json:"users"`
+	Page      int               `json:"page"`
+	Limit     int               `json:"limit"`
+	TotalUser int               `json:"total"`
+	TotalPage int               `json:"total_pages"`
+}
