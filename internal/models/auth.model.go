@@ -34,3 +34,22 @@ type ChangePINRequest struct {
 type SetPINRequest struct {
 	PIN string `form:"pin" json:"new_pin" binding:"required,min=6"`
 }
+
+type ForgotPasswordOrPINRequest struct {
+	Email string `json:"email" form:"email" binding:"required,email"`
+}
+
+type ResetPasswordRequest struct {
+	Token       string `json:"token" form:"token" binding:"required"`
+	NewPassword string `json:"new_password" form:"new_password" binding:"required"`
+}
+
+type ResetPINRequest struct {
+	Token  string `json:"token" form:"token" binding:"required"`
+	NewPIN string `json:"new_pin" form:"new_pin" binding:"required,min=6"`
+}
+
+type ResponseReset struct {
+	Token string `json:"token"`
+	Link  string `json:"link"`
+}

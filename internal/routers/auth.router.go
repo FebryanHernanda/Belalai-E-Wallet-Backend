@@ -20,4 +20,9 @@ func InitAuthRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	authRouter.PATCH("/update-pin", middleware.VerifyToken(rdb), authHandler.UpdatePIN)
 	authRouter.PATCH("/change-pin", middleware.VerifyToken(rdb), authHandler.ChangePIN)
 	authRouter.PATCH("/change-password", middleware.VerifyToken(rdb), authHandler.ChangePassword)
+
+	authRouter.POST("/forgot-password", authHandler.ForgotPassword)
+	authRouter.POST("/reset-password", authHandler.ResetPassword)
+	authRouter.POST("/forgot-pin", authHandler.ForgotPIN)
+	authRouter.POST("/reset-pin", authHandler.ResetPIN)
 }

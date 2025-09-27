@@ -1,10 +1,14 @@
 package handler
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
 	"github.com/Belalai-E-Wallet-Backend/internal/repository"
@@ -215,6 +219,21 @@ func (a *AuthHandler) Register(ctx *gin.Context) {
 			})
 			return
 		}
+
+		go func() {
+			err := utils.Send(utils.SendOptions{
+				To:         []string{body.Email},
+				Subject:    "Welcome to E-Wallet!",
+				Body:       fmt.Sprintf("<h2>Hello %s!</h2><p>Terima kasih sudah mendaftar di E-Wallet.</p>", body.Email),
+				BodyIsHTML: true,
+			})
+			if err != nil {
+				log.Println("Failed to send registration email:", err)
+			} else {
+				log.Printf("Email registration sent to %s\n", body.Email)
+			}
+		}()
+
 		ctx.JSON(http.StatusOK, models.Response{
 			IsSuccess: true,
 			Code:      200,
@@ -522,4 +541,290 @@ func (a *AuthHandler) Logout(ctx *gin.Context) {
 			Msg:       "Logout successfully",
 		})
 	}
+}
+
+func (a *AuthHandler) ForgotPassword(ctx *gin.Context) {
+	var body models.ForgotPasswordOrPINRequest
+	if err := ctx.ShouldBind(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: "invalid email format",
+		})
+		return
+	}
+
+	user, err := a.ar.GetEmail(ctx.Request.Context(), body.Email)
+	if err != nil {
+		ctx.JSON(http.StatusOK, models.Response{
+			IsSuccess: true,
+			Code:      http.StatusOK,
+			Msg:       "Link reset password was sent to email",
+		})
+		return
+	}
+
+	token, err := utils.GenerateRandomToken(32)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to generate token",
+		})
+		return
+	}
+
+	key := "reset:pwd:" + token
+	if err := a.ar.SaveResetToken(ctx, key, fmt.Sprintf("%d", user.ID), 15*time.Minute); err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to save reset token",
+		})
+		return
+	}
+
+	frontendURL := os.Getenv("FRONTEND_URL")
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, token)
+	go utils.Send(utils.SendOptions{
+		To:         []string{body.Email},
+		Subject:    "Reset Password",
+		Body:       fmt.Sprintf("<p>Klik link berikut untuk reset password Anda:</p><p><a href='%s'>Reset Password</a></p>", resetLink),
+		BodyIsHTML: true,
+	})
+
+	// ctx.JSON(http.StatusOK, models.Response{
+	// 	IsSuccess: true,
+	// 	Code:      http.StatusOK,
+	// 	Msg:       "Link reset password was sent to email",
+	// })
+	ctx.JSON(http.StatusOK, models.ResponseData{
+		Response: models.Response{
+			IsSuccess: true,
+			Code:      http.StatusOK,
+			Msg:       "Link reset password was sent to email",
+		},
+		Data: models.ResponseReset{
+			Token: token,
+			Link:  resetLink,
+		},
+	})
+}
+
+func (a *AuthHandler) ResetPassword(ctx *gin.Context) {
+	var body models.ResetPasswordRequest
+	if err := ctx.ShouldBind(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: "token and new password required",
+		})
+		return
+	}
+
+	key := "reset:pwd:" + body.Token
+	userIdStr, err := a.ar.GetResetToken(ctx, key)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: "invalid or expired token",
+		})
+		return
+	}
+	defer a.ar.DeleteResetToken(ctx, key)
+
+	userId, err := strconv.Atoi(userIdStr)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to parse user id",
+		})
+		return
+	}
+
+	// hash password baru
+	hc := pkg.NewHashConfig()
+	hc.UseRecommended()
+	hashedPwd, err := hc.GenHash(body.NewPassword)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to hash password",
+		})
+		return
+	}
+
+	if err := a.ar.UpdatePassword(ctx, userId, hashedPwd); err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to update password",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, models.Response{
+		IsSuccess: true,
+		Code:      http.StatusOK,
+		Msg:       "Password reset successfully",
+	})
+}
+
+func (a *AuthHandler) ForgotPIN(ctx *gin.Context) {
+	var body models.ForgotPasswordOrPINRequest
+	if err := ctx.ShouldBind(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: "invalid email format",
+		})
+		return
+	}
+
+	user, err := a.ar.GetEmail(ctx.Request.Context(), body.Email)
+	if err != nil {
+		ctx.JSON(http.StatusOK, models.Response{
+			IsSuccess: true,
+			Code:      200,
+			Msg:       "Link reset PIN was sent to email",
+		})
+		return
+	}
+
+	token, err := utils.GenerateRandomToken(32)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to generate token",
+		})
+		return
+	}
+
+	key := "reset:pin:" + token
+	if err := a.ar.SaveResetToken(ctx, key, fmt.Sprintf("%d", user.ID), 15*time.Minute); err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to save reset token",
+		})
+		return
+	}
+
+	frontendURL := os.Getenv("FRONTEND_URL")
+	resetLink := fmt.Sprintf("%s/reset-pin?token=%s", frontendURL, token)
+	go utils.Send(utils.SendOptions{
+		To:         []string{body.Email},
+		Subject:    "Reset PIN",
+		Body:       fmt.Sprintf("<p>Klik link berikut untuk reset PIN Anda:</p><p><a href='%s'>Reset PIN</a></p>", resetLink),
+		BodyIsHTML: true,
+	})
+
+	ctx.JSON(http.StatusOK, models.ResponseData{
+		Response: models.Response{
+			IsSuccess: true,
+			Code:      http.StatusOK,
+			Msg:       "Link reset password was sent to email",
+		},
+		Data: models.ResponseReset{
+			Token: token,
+			Link:  resetLink,
+		},
+	})
+}
+
+func (a *AuthHandler) ResetPIN(ctx *gin.Context) {
+	var body models.ResetPINRequest
+	if err := ctx.ShouldBind(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: "token and new pin required",
+		})
+		return
+	}
+
+	key := "reset:pin:" + body.Token
+	userIdStr, err := a.ar.GetResetToken(ctx, key)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+			},
+			Err: "invalid or expired token",
+		})
+		return
+	}
+	defer a.ar.DeleteResetToken(ctx, key)
+
+	userId, err := strconv.Atoi(userIdStr)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to parse user id",
+		})
+		return
+	}
+
+	hc := pkg.NewHashConfig()
+	hc.UseRecommended()
+	hashedPin, err := hc.GenHash(body.NewPIN)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to hash pin",
+		})
+		return
+	}
+
+	if err := a.ar.UpdatePIN(ctx, userId, hashedPin); err != nil {
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "failed to update pin",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, models.Response{
+		IsSuccess: true,
+		Code:      http.StatusOK,
+		Msg:       "PIN reset successfully",
+	})
 }
