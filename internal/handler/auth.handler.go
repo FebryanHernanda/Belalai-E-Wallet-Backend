@@ -80,6 +80,14 @@ func (a *AuthHandler) Login(ctx *gin.Context) {
 		})
 		return
 	}
+	// check if pin is exist
+	var isPinExist bool
+	if user.Pin == nil {
+		isPinExist = false
+	} else {
+		isPinExist = true
+	}
+
 	// compare the password :
 	// body.password => from http body / input user
 	// user.Password => from query GetUserWithEmail
@@ -133,7 +141,8 @@ func (a *AuthHandler) Login(ctx *gin.Context) {
 			Msg:       "login successfully",
 		},
 		Data: models.AuthResponse{
-			Token: jwtToken,
+			Token:      jwtToken,
+			IsPinExist: isPinExist,
 		},
 	})
 }
