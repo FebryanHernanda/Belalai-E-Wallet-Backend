@@ -103,7 +103,7 @@ func (tr *TopUpRepository) FindAllPaymentMethods(c context.Context) ([]models.Pa
 	return methods, nil
 }
 
-// yang utama
+// ini yang utama
 func (tr *TopUpRepository) CreateTopUpTransaction(ctx context.Context, topup *models.TopUp, userID int) (*models.TopUp, error) {
 	tx, err := tr.db.Begin(ctx)
 	if err != nil {
