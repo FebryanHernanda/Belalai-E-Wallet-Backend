@@ -143,7 +143,7 @@ func (u *TransferHandler) TranferBalance(ctx *gin.Context) {
 			})
 			return
 		}
-		if err == repository.CantSendingToYourself {
+		if err == repository.ErrCantSendingToYourself {
 			ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
 				Response: models.Response{
 					IsSuccess: false,
