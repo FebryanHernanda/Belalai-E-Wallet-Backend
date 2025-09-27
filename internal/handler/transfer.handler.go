@@ -133,13 +133,34 @@ func (u *TransferHandler) TranferBalance(ctx *gin.Context) {
 
 	// if match execute tranfer using func repo
 	if err := u.transRep.TransferMoney(ctx.Request.Context(), userID, body); err != nil {
+		if err == repository.ErrNotEnoughBalance {
+			ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+				Response: models.Response{
+					IsSuccess: false,
+					Code:      http.StatusBadRequest,
+				},
+				Err: err.Error(),
+			})
+			return
+		}
+		if err == repository.CantSendingToYourself {
+			ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+				Response: models.Response{
+					IsSuccess: false,
+					Code:      http.StatusBadRequest,
+				},
+				Err: err.Error(),
+			})
+			return
+		}
 		log.Println("Internal Server Error.\nCause: ", err.Error())
 		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Response: models.Response{
 				IsSuccess: false,
 				Code:      500,
+				Msg:       "internal server error",
 			},
-			Err: "internal server error",
+			Err: err.Error(),
 		})
 		return
 	} else {
