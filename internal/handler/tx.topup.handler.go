@@ -164,3 +164,60 @@ func (th *TopUpHandler) MarkTopUpSuccess(c *gin.Context) {
 		Msg:       "Topup applied to wallet",
 	})
 }
+
+func (th *TopUpHandler) CreateTopUpTransaction(c *gin.Context) {
+	var req models.TopUpRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusBadRequest,
+				Msg:       "Invalid request",
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	userID, err := utils.GetUserFromCtx(c)
+	if err != nil {
+		log.Println(err.Error())
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusUnauthorized,
+				Msg:       "Unauthorized",
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	topup := &models.TopUp{
+		Amount:    req.Amount,
+		Tax:       req.Tax,
+		PaymentID: req.PaymentID,
+	}
+
+	newTopup, err := th.topUpRepo.CreateTopUpTransaction(c, topup, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+				Msg:       "Failed to process topup",
+			},
+			Err: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, models.ResponseData{
+		Response: models.Response{
+			IsSuccess: true,
+			Code:      http.StatusCreated,
+			Msg:       "Topup successful",
+		},
+		Data: newTopup,
+	})
+}

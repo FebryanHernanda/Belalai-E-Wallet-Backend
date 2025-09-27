@@ -4,20 +4,25 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
+	"github.com/Belalai-E-Wallet-Backend/internal/utils"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type ProfileRepository struct {
-	db *pgxpool.Pool
+	db  *pgxpool.Pool
+	rdb *redis.Client
 }
 
-func NewProfileRepository(db *pgxpool.Pool) *ProfileRepository {
+func NewProfileRepository(db *pgxpool.Pool, rdb redis.Client) *ProfileRepository {
 	return &ProfileRepository{
-		db: db,
+		db:  db,
+		rdb: &rdb,
 	}
 }
 
@@ -95,6 +100,12 @@ func (pr *ProfileRepository) UpdateProfile(c context.Context, profile *models.Pr
 
 	if err := tx.Commit(c); err != nil {
 		return err
+	}
+
+	// Handle caching after successful profile update
+	if err := utils.HandleUpdateProfileCache(c, *pr.rdb, int64(profile.UserID), profile); err != nil {
+		log.Println("Cache operation warning:", err)
+
 	}
 
 	return nil

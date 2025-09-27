@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -86,5 +87,97 @@ func DeleteAllCache(reqContxt context.Context, rdb redis.Client) error {
 		log.Printf("Successfully deleted %d keys.\n", deletedCount)
 	}
 	// return error nill if success
+	return nil
+}
+
+// Cache new user data after registration
+func CacheNewUser[U any](ctx context.Context, rdb redis.Client, userID int64, userData U) error {
+	userKey := fmt.Sprintf("Belalai-E-wallet:user:%d", userID)
+	return RedisRenewData(ctx, rdb, userKey, userData, 1*time.Hour)
+}
+
+// Invalidate user list caches after registration (since new user added)
+func InvalidateUserListCache(ctx context.Context, rdb redis.Client) error {
+	keysToDelete := []string{
+		"Belalai-E-wallet:filter-user",
+		"Belalai-E-wallet:user-list",
+		"Belalai-E-wallet:all-users",
+	}
+
+	cmd := rdb.Del(ctx, keysToDelete...)
+	deletedCount, err := cmd.Result()
+	if err != nil {
+		log.Println("Redis Error when invalidating user list cache.\nCause:", err.Error())
+		return err
+	}
+
+	if deletedCount > 0 {
+		log.Printf("Successfully invalidated %d user list cache keys after registration.\n", deletedCount)
+	}
+
+	return nil
+}
+
+// Complete cache operations after successful registration
+func HandleRegistrationCache[U any](ctx context.Context, rdb redis.Client, userID int64, userData U) error {
+	// Cache the new user data
+	if err := CacheNewUser(ctx, rdb, userID, userData); err != nil {
+		log.Println("Warning: Failed to cache new user data:", err)
+		// Don't return error, continue with invalidation
+	}
+
+	// Invalidate user list caches
+	if err := InvalidateUserListCache(ctx, rdb); err != nil {
+		log.Println("Warning: Failed to invalidate user list cache:", err)
+		return err
+	}
+
+	return nil
+}
+
+// update profile
+
+func InvalidateUserProfileCache(ctx context.Context, rdb redis.Client, userID int64) error {
+	keysToDelete := []string{
+		fmt.Sprintf("Belalai-E-wallet:user:%d", userID),
+		fmt.Sprintf("Belalai-E-wallet:user-profile:%d", userID),
+		fmt.Sprintf("Belalai-E-wallet:profile:%d", userID),
+		"Belalai-E-wallet:filter-user", // User list might show profile info
+	}
+
+	cmd := rdb.Del(ctx, keysToDelete...)
+	deletedCount, err := cmd.Result()
+	if err != nil {
+		log.Println("Redis Error when invalidating user profile cache.\nCause:", err.Error())
+		return err
+	}
+
+	if deletedCount > 0 {
+		log.Printf("Successfully invalidated %d user profile cache keys after update.\n", deletedCount)
+	}
+
+	return nil
+}
+
+// Cache updated profile data
+func CacheUpdatedProfile[P any](ctx context.Context, rdb redis.Client, userID int64, profileData P) error {
+	profileKey := fmt.Sprintf("Belalai-E-wallet:user-profile:%d", userID)
+	return RedisRenewData(ctx, rdb, profileKey, profileData, 1*time.Hour)
+}
+
+// Complete cache operations after successful profile update
+func HandleUpdateProfileCache[P any](ctx context.Context, rdb redis.Client, userID int64, profileData P) error {
+
+	if err := InvalidateUserProfileCache(ctx, rdb, userID); err != nil {
+		log.Println("Warning: Failed to invalidate profile cache:", err)
+
+	}
+
+	// Cache the updated profile data
+	if err := CacheUpdatedProfile(ctx, rdb, userID, profileData); err != nil {
+		log.Println("Warning: Failed to cache updated profile data:", err)
+		return err
+	}
+
 	return nil
 }

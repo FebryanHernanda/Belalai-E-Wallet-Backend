@@ -11,7 +11,7 @@ import (
 
 func InitProfileRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	profile := router.Group("/profile")
-	profileRepo := repository.NewProfileRepository(db)
+	profileRepo := repository.NewProfileRepository(db, *rdb)
 	profileHandler := handler.NewProfileHandler(profileRepo)
 
 	profile.GET("", middleware.VerifyToken(rdb), profileHandler.GetProfile)
