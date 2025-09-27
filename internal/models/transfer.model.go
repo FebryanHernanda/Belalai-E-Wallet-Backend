@@ -4,7 +4,7 @@ import "time"
 
 type TransferBody struct {
 	IdReceiver    int    `json:"receiver_id" binding:"required"`
-	ReceiverPhone int    `json:"receiver_phone" binding:"required"`
+	ReceiverPhone string `json:"receiver_phone" binding:"required"`
 	Amount        int    `json:"amount" binding:"required"`
 	Notes         string `json:"notes" binding:"required"`
 	PinSender     string `json:"pin_sender" binding:"required,min=6"`

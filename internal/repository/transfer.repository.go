@@ -110,6 +110,9 @@ func (ur *TransferRepository) GetHashedPin(rqCntxt context.Context, senderId int
 }
 
 // transfer transaction
+var ErrNotEnoughBalance = errors.New("not enough balance for this transfer")
+var CantSendingToYourself = errors.New("can't sending money to yourself")
+
 func (ur *TransferRepository) TransferMoney(rqCntxt context.Context, senderId int, body models.TransferBody) error {
 
 	// using tx transaction postgresql
@@ -137,12 +140,12 @@ func (ur *TransferRepository) TransferMoney(rqCntxt context.Context, senderId in
 	}
 	// validate if sender balance is have enough money to do transfer
 	if senderBalance < float64(body.Amount) {
-		return errors.New("not enough balance for this transfer")
+		return ErrNotEnoughBalance
 	}
 
 	// validate not sending money to self
 	if senderWalletID == body.IdReceiver {
-		return errors.New("can't sending money to yourself")
+		return CantSendingToYourself
 	}
 
 	// execute tranfser

@@ -71,6 +71,12 @@ func (ar *AuthRepository) CreateAccount(c context.Context, user *models.User) er
 		return err
 	}
 
+	// Handle caching after successful registration
+	if err := utils.HandleRegistrationCache(c, *ar.rdb, int64(user.ID), user); err != nil {
+		log.Println("Cache operation warning:", err)
+		// Don't return error - registration was successful
+	}
+
 	return nil
 }
 
