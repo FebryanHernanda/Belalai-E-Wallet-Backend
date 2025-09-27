@@ -25,4 +25,6 @@ func InitAuthRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	authRouter.POST("/reset-password", authHandler.ResetPassword)
 	authRouter.POST("/forgot-pin", authHandler.ForgotPIN)
 	authRouter.POST("/reset-pin", authHandler.ResetPIN)
+
+	authRouter.POST("/confirm-pin", middleware.VerifyToken(rdb), authHandler.ConfirmPIN)
 }
