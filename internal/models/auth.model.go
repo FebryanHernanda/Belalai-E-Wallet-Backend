@@ -17,7 +17,8 @@ type AuthRequest struct {
 }
 
 type AuthResponse struct {
-	Token string `json:"token"`
+	Token      string `json:"token"`
+	IsPinExist bool   `json:"is_pin_exist"`
 }
 
 type ChangePasswordRequest struct {
