@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"time"
 
 	"github.com/Belalai-E-Wallet-Backend/internal/models"
 	"github.com/Belalai-E-Wallet-Backend/internal/utils"
@@ -123,4 +124,16 @@ func (ar *AuthRepository) BlacklistToken(c context.Context, token string) error 
 	}
 	// is success return nil
 	return nil
+}
+
+func (ar *AuthRepository) SaveResetToken(c context.Context, key, value string, ttl time.Duration) error {
+	return ar.rdb.Set(c, key, value, ttl).Err()
+}
+
+func (ar *AuthRepository) GetResetToken(c context.Context, key string) (string, error) {
+	return ar.rdb.Get(c, key).Result()
+}
+
+func (ar *AuthRepository) DeleteResetToken(c context.Context, key string) error {
+	return ar.rdb.Del(c, key).Err()
 }
