@@ -143,3 +143,16 @@ func (ar *AuthRepository) GetResetToken(c context.Context, key string) (string, 
 func (ar *AuthRepository) DeleteResetToken(c context.Context, key string) error {
 	return ar.rdb.Del(c, key).Err()
 }
+
+func (ar *AuthRepository) GetEmailForSMPT(c context.Context, email string) (*models.User, error) {
+	query := "select id, email from users where email = $1"
+
+	var user models.User
+	if err := ar.db.QueryRow(c, query, email).Scan(&user.ID, &user.Email); err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+	return &user, nil
+}
