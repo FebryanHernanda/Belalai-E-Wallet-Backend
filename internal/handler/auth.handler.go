@@ -551,17 +551,19 @@ func (a *AuthHandler) ForgotPassword(ctx *gin.Context) {
 				IsSuccess: false,
 				Code:      http.StatusBadRequest,
 			},
-			Err: "invalid email format",
+			Err: "Invalid email format",
 		})
 		return
 	}
 
-	user, err := a.ar.GetEmail(ctx.Request.Context(), body.Email)
+	user, err := a.ar.GetEmailForSMPT(ctx.Request.Context(), body.Email)
 	if err != nil {
-		ctx.JSON(http.StatusOK, models.Response{
-			IsSuccess: true,
-			Code:      http.StatusOK,
-			Msg:       "Link reset password was sent to email",
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "User not registered",
 		})
 		return
 	}
@@ -573,7 +575,7 @@ func (a *AuthHandler) ForgotPassword(ctx *gin.Context) {
 				IsSuccess: false,
 				Code:      http.StatusInternalServerError,
 			},
-			Err: "failed to generate token",
+			Err: "Failed to generate token",
 		})
 		return
 	}
@@ -585,7 +587,7 @@ func (a *AuthHandler) ForgotPassword(ctx *gin.Context) {
 				IsSuccess: false,
 				Code:      http.StatusInternalServerError,
 			},
-			Err: "failed to save reset token",
+			Err: "Failed to save reset token",
 		})
 		return
 	}
@@ -599,21 +601,10 @@ func (a *AuthHandler) ForgotPassword(ctx *gin.Context) {
 		BodyIsHTML: true,
 	})
 
-	// ctx.JSON(http.StatusOK, models.Response{
-	// 	IsSuccess: true,
-	// 	Code:      http.StatusOK,
-	// 	Msg:       "Link reset password was sent to email",
-	// })
-	ctx.JSON(http.StatusOK, models.ResponseData{
-		Response: models.Response{
-			IsSuccess: true,
-			Code:      http.StatusOK,
-			Msg:       "Link reset password was sent to email",
-		},
-		Data: models.ResponseReset{
-			Token: token,
-			Link:  resetLink,
-		},
+	ctx.JSON(http.StatusOK, models.Response{
+		IsSuccess: true,
+		Code:      http.StatusOK,
+		Msg:       "Link reset password was sent to email",
 	})
 }
 
@@ -702,12 +693,14 @@ func (a *AuthHandler) ForgotPIN(ctx *gin.Context) {
 		return
 	}
 
-	user, err := a.ar.GetEmail(ctx.Request.Context(), body.Email)
+	user, err := a.ar.GetEmailForSMPT(ctx.Request.Context(), body.Email)
 	if err != nil {
-		ctx.JSON(http.StatusOK, models.Response{
-			IsSuccess: true,
-			Code:      200,
-			Msg:       "Link reset PIN was sent to email",
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      http.StatusInternalServerError,
+			},
+			Err: "User not registered",
 		})
 		return
 	}
@@ -750,10 +743,6 @@ func (a *AuthHandler) ForgotPIN(ctx *gin.Context) {
 			IsSuccess: true,
 			Code:      http.StatusOK,
 			Msg:       "Link reset password was sent to email",
-		},
-		Data: models.ResponseReset{
-			Token: token,
-			Link:  resetLink,
 		},
 	})
 }
