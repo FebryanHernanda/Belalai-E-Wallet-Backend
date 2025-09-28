@@ -4,6 +4,8 @@
 ![badge postgresql](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![badge redis](https://img.shields.io/badge/redis-%23DD0031.svg?&style=for-the-badge&logo=redis&logoColor=white)
 
+<img src="/public/belalai-wallet.png"  align="right" width="370px">
+
 Welcome to Belalai E-Wallet! 🐘 The digital wallet application designed to give you fast and easy access to your money, anytime, anywhere. Inspired by the elephant's trunk—a versatile, multi-functional tool—Belalai E-Wallet offers the same effortless reach for all your financial transactions, from bill payments to fund transfers. We’ve built a nimble and robust platform, ensuring your e-wallet experience is as swift and reliable as the movement of a trunk. This project is backend for [Belalai E-Wallet Frontend](https://github.com/FebryanHernanda/Belalai-E-Wallet-Frontend) web application build gin gonic as framework for HTTP API, Go language, PostgreSQL as database, and redis as cache sistem.
 
 ## 🔧 Tech Stack
