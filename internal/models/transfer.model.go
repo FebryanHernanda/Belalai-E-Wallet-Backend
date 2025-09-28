@@ -6,7 +6,7 @@ type TransferBody struct {
 	IdReceiver    int    `json:"receiver_id" binding:"required"`
 	ReceiverPhone string `json:"receiver_phone" binding:"required"`
 	Amount        int    `json:"amount" binding:"required"`
-	Notes         string `json:"notes" binding:"required"`
+	Notes         string `json:"notes"`
 	PinSender     string `json:"pin_sender" binding:"required,min=6"`
 }
 
