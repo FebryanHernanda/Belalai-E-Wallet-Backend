@@ -18,6 +18,7 @@ Welcome to Belalai E-Wallet! 🐘 The digital wallet application designed to giv
 - [migrate](https://github.com/golang-migrate/migrate)
 - [Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository)
 - [Swagger for API docs](https://swagger.io/) + [Swaggo](https://github.com/swaggo/swag)
+- [Gomail](https://gopkg.in/gomail.v2)
 
 ## 🗝️ Environment
 
@@ -44,7 +45,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=<your_email>
 SMTP_PASS=<your_app_password_email>
-SMTP_FROM="<aplication-name> <your_email>" # wtih " "
+SMTP_FROM="<aplication-name> <your_email>" # with " "
 FRONTEND_URL=<your_fronend_url>
 ```
 
