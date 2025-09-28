@@ -214,14 +214,20 @@ func (th *TransactionHandler) GetAllTransactionHistory(ctx *gin.Context) {
 		log.Println("Error getting all transaction history from repository.\nCause: ", err.Error())
 
 		if err.Error() == "no transactions found" {
-			ctx.JSON(http.StatusNotFound, models.ErrorResponse{
+			ctx.JSON(http.StatusNoContent, models.ResponseData{
 				Response: models.Response{
-					IsSuccess: false,
-					Code:      404,
+					IsSuccess: true,
+					Code:      http.StatusNoContent,
+					Msg:       "No History Found",
 				},
-				Err: "Transaction history not found",
+				Data: map[string]interface{}{
+					"transactions": histories,
+					"page":         page,
+					"limit":        limit,
+					"total":        totalCount,
+					"total_pages":  totalPages,
+				},
 			})
-			return
 		}
 
 		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
