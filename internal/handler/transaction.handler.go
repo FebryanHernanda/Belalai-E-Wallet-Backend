@@ -55,7 +55,7 @@ func (th *TransactionHandler) GetTransactionHistory(ctx *gin.Context) {
 
 	limit, err := strconv.Atoi(ctx.Query("limit"))
 	if err != nil || limit < 1 {
-		limit = 10 // default limit for transaction history
+		limit = 10
 	}
 
 	// Calculate offset
@@ -78,7 +78,7 @@ func (th *TransactionHandler) GetTransactionHistory(ctx *gin.Context) {
 	// Calculate total pages
 	totalPages := 0
 	if limit > 0 && totalCount > 0 {
-		totalPages = (totalCount + limit - 1) / limit // Ceiling division
+		totalPages = (totalCount + limit - 1) / limit
 	}
 
 	// If no transactions found at all
@@ -320,5 +320,86 @@ func (th *TransactionHandler) DeleteTransaction(ctx *gin.Context) {
 		IsSuccess: true,
 		Code:      http.StatusOK,
 		Msg:       "Transaction deleted successfully",
+	})
+}
+
+// Handler Method untuk Topup
+// DeleteTopup - Soft delete topup
+// @tags 			topup
+// @router 			/transaction/topup/{id} 	[DELETE]
+// @Summary 		Soft delete topup
+// @Description 	Soft delete topup for authenticated user
+// @accept 			json
+// @produce 		json
+// @Security 		BearerAuth
+// @Param			id	path	int	true	"Topup ID"
+// @failure 		401			{object} 	models.UnauthorizedResponse "Unauthorized"
+// @failure 		404			{object} 	models.NotFoundResponse "Topup Not Found"
+// @failure 		500 		{object} 	models.InternalErrorResponse "Internal Server Error"
+// @success 		200 		{object}  	models.Response "Success Response"
+func (th *TransactionHandler) DeleteTopup(ctx *gin.Context) {
+	userID, err := utils.GetUserFromCtx(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      401,
+			},
+			Err: "Unauthorized",
+		})
+		return
+	}
+
+	topupIDStr := ctx.Param("id")
+	topupID, err := strconv.Atoi(topupIDStr)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      400,
+			},
+			Err: "Invalid topup ID",
+		})
+		return
+	}
+
+	err = th.tr.SoftDeleteTopup(ctx, topupID, userID)
+	if err != nil {
+		if err.Error() == "topup not found" {
+			ctx.JSON(http.StatusNotFound, models.ErrorResponse{
+				Response: models.Response{
+					IsSuccess: false,
+					Code:      404,
+				},
+				Err: "Topup not found",
+			})
+			return
+		}
+
+		if err.Error() == "unauthorized" {
+			ctx.JSON(http.StatusUnauthorized, models.ErrorResponse{
+				Response: models.Response{
+					IsSuccess: false,
+					Code:      401,
+				},
+				Err: "Unauthorized",
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Response: models.Response{
+				IsSuccess: false,
+				Code:      500,
+			},
+			Err: "Failed to delete topup",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, models.Response{
+		IsSuccess: true,
+		Code:      http.StatusOK,
+		Msg:       "Topup deleted successfully",
 	})
 }

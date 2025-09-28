@@ -17,4 +17,5 @@ func InitTransactionRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Clie
 	transactionRouter.GET("/history", middleware.VerifyToken(rdb), transactionHandler.GetTransactionHistory)
 	transactionRouter.GET("/history/all", middleware.VerifyToken(rdb), transactionHandler.GetAllTransactionHistory)
 	transactionRouter.DELETE("/:id", middleware.VerifyToken(rdb), transactionHandler.DeleteTransaction)
+	transactionRouter.DELETE("/topup/:id", middleware.VerifyToken(rdb), transactionHandler.DeleteTopup)
 }
