@@ -182,25 +182,54 @@ func (tr *TransactionRepository) SoftDeleteTransaction(ctx context.Context, tran
 	return nil
 }
 
-// GetTopupHistory - untuk mendapatkan history topup
+func (tr *TransactionRepository) SoftDeleteTopup(ctx context.Context, topupID, userID int) error {
+
+	checkSQL := `SELECT w.user_id
+FROM topup t
+JOIN wallets_topup wt ON wt.topup_id = t.id
+JOIN wallets w ON wt.wallets_id = w.id
+WHERE t.id = $1 
+  AND t.deleted_at IS NULL;`
+
+	var ownerID int
+	err := tr.db.QueryRow(ctx, checkSQL, topupID).Scan(&ownerID)
+	if err != nil {
+		return errors.New("topup not found")
+	}
+
+	if ownerID != userID {
+		return errors.New("unauthorized")
+	}
+
+	// Update untuk soft delete
+	updateSQL := `UPDATE topup SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1`
+	_, err = tr.db.Exec(ctx, updateSQL, topupID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (tr *TransactionRepository) GetTopupHistory(ctx context.Context, userID int) ([]models.TransactionHistory, error) {
 	sql := `SELECT 
-		t.id,
-		'Topup' as transaction_type,
-		'' as profile_picture,
-		pm.name as contact_name,
-		'' as phone_number,
-		CONCAT('+Rp ', TO_CHAR(t.amount, 'FM999,999,999')) as display_amount,
-		t.amount as original_amount,
-		COALESCE(t.topup_status::text, 'pending') as status,
-		CONCAT('Tax: Rp ', TO_CHAR(COALESCE(t.tax, 0), 'FM999,999,999')) as notes,
-		t.created_at
-	FROM topup t
-	JOIN wallets_topup wt ON t.id = wt.topup_id
-	JOIN wallets w ON wt.wallets_id = w.id
-	JOIN payment_method pm ON t.payment_id = pm.id
-	WHERE w.user_id = $1
-	ORDER BY t.created_at DESC`
+    t.id,
+    'Topup' AS transaction_type,
+    '' AS profile_picture,
+    pm.name AS contact_name,
+    '' AS phone_number,
+    CONCAT('+Rp ', TO_CHAR(t.amount, 'FM999,999,999')) AS display_amount,
+    t.amount AS original_amount,
+    COALESCE(t.topup_status::text, 'pending') AS status,
+    CONCAT('Tax: Rp ', TO_CHAR(COALESCE(t.tax, 0), 'FM999,999,999')) AS notes,
+    t.created_at
+FROM topup t
+JOIN wallets_topup wt ON t.id = wt.topup_id
+JOIN wallets w ON wt.wallets_id = w.id
+JOIN payment_method pm ON t.payment_id = pm.id
+WHERE w.user_id = $1 
+  AND t.deleted_at IS NULL
+ORDER BY t.created_at DESC;`
 
 	rows, err := tr.db.Query(ctx, sql, userID)
 	if err != nil {
