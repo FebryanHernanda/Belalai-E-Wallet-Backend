@@ -9,7 +9,7 @@ import (
 
 func CORSMiddleware(ctx *gin.Context) {
 	// setup whitelist origin
-	whitelist := []string{"http://localhost:5173", "http://127.0.0.1:5173"}
+	whitelist := []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:2409", "http://127.0.0.1:2409"}
 	origin := ctx.GetHeader("Origin")
 	if slices.Contains(whitelist, origin) {
 		ctx.Header("Access-Control-Allow-Origin", origin)
