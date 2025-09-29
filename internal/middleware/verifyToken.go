@@ -16,9 +16,10 @@ func VerifyToken(rdb *redis.Client) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// ambil token dari header
 		bearerToken := ctx.GetHeader("Authorization")
-		// Bearer token
-		token := strings.Split(bearerToken, " ")[1]
-		if token == "" {
+
+		// Check if Authorization header is empty
+		if bearerToken == "" {
+			log.Println("Authorization header is missing")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"success": false,
 				"error":   "Silahkan login terlebih dahulu",
@@ -26,7 +27,42 @@ func VerifyToken(rdb *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		// !DO cek token from redish if it not blacklisted
+		// Split the bearer token
+		parts := strings.Split(bearerToken, " ")
+
+		// Check if the format is correct (should be "Bearer <token>")
+		if len(parts) != 2 {
+			log.Println("Invalid Authorization header format. Expected: Bearer <token>")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"error":   "Format authorization header tidak valid",
+			})
+			return
+		}
+
+		// Validate Bearer prefix
+		if parts[0] != "Bearer" {
+			log.Println("Authorization header must start with 'Bearer'")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"error":   "Format authorization header tidak valid",
+			})
+			return
+		}
+
+		token := parts[1]
+
+		// Check if token is empty
+		if token == "" {
+			log.Println("Token is empty after Bearer")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"error":   "Silahkan login terlebih dahulu",
+			})
+			return
+		}
+
+		// !DO cek token from redis if it not blacklisted
 		isBlacklisted, err := rdb.Get(ctx, "Belalai-E-wallet:blacklist:"+bearerToken).Result()
 		if err == nil && isBlacklisted == "true" {
 			log.Println("Token sudah logout, silahkan login kembali")
