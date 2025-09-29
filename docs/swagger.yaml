@@ -11,6 +11,8 @@ definitions:
     type: object
   models.AuthResponse:
     properties:
+      is_pin_exist:
+        type: boolean
       token:
         type: string
     type: object
@@ -26,6 +28,46 @@ definitions:
         example: false
         type: boolean
     type: object
+  models.ChangePINRequest:
+    properties:
+      new_pin:
+        minLength: 6
+        type: string
+      old_pin:
+        minLength: 6
+        type: string
+    required:
+    - new_pin
+    - old_pin
+    type: object
+  models.ChangePasswordRequest:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  models.ErrorResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      error:
+        example: Error message...
+        type: string
+      is_success:
+        example: true
+        type: boolean
+      message:
+        example: Example message success...
+        type: string
+      page:
+        example: 1
+        type: integer
+    type: object
   models.InternalErrorResponse:
     properties:
       code:
@@ -33,6 +75,18 @@ definitions:
         type: integer
       error:
         example: Example Internal server error...
+        type: string
+      is_success:
+        example: false
+        type: boolean
+    type: object
+  models.NotFoundResponse:
+    properties:
+      code:
+        example: 404
+        type: integer
+      error:
+        example: Not Found
         type: string
       is_success:
         example: false
@@ -53,6 +107,42 @@ definitions:
         example: 1
         type: integer
     type: object
+  models.ResponseData:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data: {}
+      is_success:
+        example: true
+        type: boolean
+      message:
+        example: Example message success...
+        type: string
+      page:
+        example: 1
+        type: integer
+    type: object
+  models.SetPINRequest:
+    properties:
+      new_pin:
+        minLength: 6
+        type: string
+    required:
+    - new_pin
+    type: object
+  models.UnauthorizedResponse:
+    properties:
+      code:
+        example: 401
+        type: integer
+      error:
+        example: 'Unauthorized : please login again...'
+        type: string
+      is_success:
+        example: false
+        type: boolean
+    type: object
 host: 127.0.0.1:2409
 info:
   contact: {}
@@ -61,6 +151,24 @@ info:
   version: "1.0"
 paths:
   /auth:
+    delete:
+      description: Logout user by blacklist their token on redis
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
+      summary: Logout user by blacklist their token
+      tags:
+      - logout
     post:
       consumes:
       - application/json
@@ -91,6 +199,278 @@ paths:
       summary: Login registered user
       tags:
       - login
+  /auth/change-password:
+    patch:
+      consumes:
+      - application/json
+      description: Change the current user password by providing old password and
+        new password
+      parameters:
+      - description: Old and New Password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.BadRequestResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      summary: Change current user password
+      tags:
+      - auth
+  /auth/change-pin:
+    patch:
+      consumes:
+      - application/json
+      description: Change the current user PIN by providing old PIN and new PIN (min
+        6 characters)
+      parameters:
+      - description: Old and New PIN
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ChangePINRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.BadRequestResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      summary: Change current user PIN
+      tags:
+      - auth
+  /auth/update-pin:
+    patch:
+      consumes:
+      - application/json
+      description: Update the current user PIN directly without old PIN (min 6 characters)
+      parameters:
+      - description: New PIN
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.SetPINRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.BadRequestResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      summary: Update current user PIN directly
+      tags:
+      - auth
+  /balance:
+    get:
+      consumes:
+      - application/json
+      description: Get balance for authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success Response with Balance Data
+          schema:
+            $ref: '#/definitions/models.ResponseData'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "404":
+          description: User Not Found
+          schema:
+            $ref: '#/definitions/models.NotFoundResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user balance
+      tags:
+      - balance
+  /transaction/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete transaction for authenticated user
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success Response
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "404":
+          description: Transaction Not Found
+          schema:
+            $ref: '#/definitions/models.NotFoundResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Soft delete transaction
+      tags:
+      - transaction
+  /transaction/history:
+    get:
+      consumes:
+      - application/json
+      description: Get transaction history for authenticated user (excluding soft
+        deleted) with pagination support
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success Response with Transaction History Data
+          schema:
+            $ref: '#/definitions/models.ResponseData'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "404":
+          description: Transaction History Not Found
+          schema:
+            $ref: '#/definitions/models.NotFoundResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user transaction history with pagination
+      tags:
+      - transaction
+  /transaction/history/all:
+    get:
+      consumes:
+      - application/json
+      description: Get complete transaction history including transfers and topups
+        for authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success Response with Complete Transaction History Data
+          schema:
+            $ref: '#/definitions/models.ResponseData'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "404":
+          description: Transaction History Not Found
+          schema:
+            $ref: '#/definitions/models.NotFoundResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all user transaction history (transfer + topup)
+      tags:
+      - transaction
+  /transaction/topup/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Soft delete topup for authenticated user
+      parameters:
+      - description: Topup ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success Response
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "404":
+          description: Topup Not Found
+          schema:
+            $ref: '#/definitions/models.NotFoundResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Soft delete topup
+      tags:
+      - topup
 securityDefinitions:
   JWTtoken:
     in: header
