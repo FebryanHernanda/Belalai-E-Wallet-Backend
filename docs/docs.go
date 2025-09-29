@@ -548,6 +548,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/chart/{duration}": {
+            "get": {
+                "security": [
+                    {
+                        "JWTtoken": []
+                    }
+                ],
+                "description": "Mendapatkan data chart keuangan pengguna yang sudah diautentikasi (berdasarkan ID pengguna dari token JWT) dengan filter durasi tertentu.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chart"
+                ],
+                "summary": "Mendapatkan data chart berdasarkan durasi filter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Durasi filter data chart (contoh: 'seven_days', 'five_weeks', 'twelve_months')",
+                        "name": "duration",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data chart berhasil diambil",
+                        "schema": {
+                            "$ref": "#/definitions/models.ChartDataResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi (Unauthorized) - Token JWT tidak valid atau hilang",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Kesalahan server internal",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/topup": {
             "post": {
                 "security": [
@@ -860,6 +909,127 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/transfer": {
+            "get": {
+                "security": [
+                    {
+                        "JWTtoken": []
+                    }
+                ],
+                "description": "Mendapatkan daftar pengguna dengan opsi pencarian dan paginasi. Digunakan untuk memilih pengguna tujuan transfer.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transfer"
+                ],
+                "summary": "Memfilter daftar pengguna",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Kata kunci pencarian nama atau nomor telepon",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Nomor halaman untuk paginasi (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar pengguna berhasil diambil",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.ResponseData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/models.ListprofileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi (Unauthorized) - Token JWT tidak valid atau hilang",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Kesalahan server internal",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JWTtoken": []
+                    }
+                ],
+                "description": "Melakukan proses transfer saldo dari pengguna yang terautentikasi ke pengguna tujuan, memerlukan verifikasi PIN.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transfer"
+                ],
+                "summary": "Melakukan transfer saldo",
+                "parameters": [
+                    {
+                        "description": "Detail transfer (ID penerima, jumlah, dan PIN pengirim)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TransferBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transfer berhasil",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Permintaan tidak valid (contoh: data binding gagal, PIN salah, saldo tidak cukup, transfer ke diri sendiri)",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi (Unauthorized) - Token JWT tidak valid atau hilang",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Kesalahan server internal",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -938,6 +1108,53 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ChartData": {
+            "type": "object",
+            "properties": {
+                "expense_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "income_data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.ChartDataResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/models.ChartData"
+                },
+                "is_success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Example message success..."
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "models.ConfirmPayment": {
             "type": "object",
             "required": [
@@ -1002,6 +1219,29 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ListprofileResponse": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ProfileResponse"
+                    }
+                }
+            }
+        },
         "models.NotFoundResponse": {
             "type": "object",
             "properties": {
@@ -1016,6 +1256,32 @@ const docTemplate = `{
                 "is_success": {
                     "type": "boolean",
                     "example": false
+                }
+            }
+        },
+        "models.ProfileResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "fullname": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "profile_picture": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -1120,6 +1386,33 @@ const docTemplate = `{
                 },
                 "tax": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.TransferBody": {
+            "type": "object",
+            "required": [
+                "amount",
+                "pin_sender",
+                "receiver_id",
+                "receiver_phone"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "pin_sender": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "receiver_id": {
+                    "type": "integer"
+                },
+                "receiver_phone": {
+                    "type": "string"
                 }
             }
         },

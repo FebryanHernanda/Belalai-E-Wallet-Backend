@@ -50,6 +50,38 @@ definitions:
     - new_password
     - old_password
     type: object
+  models.ChartData:
+    properties:
+      expense_data:
+        items:
+          type: integer
+        type: array
+      income_data:
+        items:
+          type: integer
+        type: array
+      labels:
+        items:
+          type: string
+        type: array
+    type: object
+  models.ChartDataResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/models.ChartData'
+      is_success:
+        example: true
+        type: boolean
+      message:
+        example: Example message success...
+        type: string
+      page:
+        example: 1
+        type: integer
+    type: object
   models.ConfirmPayment:
     properties:
       pin:
@@ -94,6 +126,21 @@ definitions:
         example: false
         type: boolean
     type: object
+  models.ListprofileResponse:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/models.ProfileResponse'
+        type: array
+    type: object
   models.NotFoundResponse:
     properties:
       code:
@@ -105,6 +152,23 @@ definitions:
       is_success:
         example: false
         type: boolean
+    type: object
+  models.ProfileResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      fullname:
+        type: string
+      phone:
+        type: string
+      profile_picture:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
     type: object
   models.ResetPINRequest:
     properties:
@@ -177,6 +241,25 @@ definitions:
     required:
     - amount
     - payment_id
+    type: object
+  models.TransferBody:
+    properties:
+      amount:
+        type: integer
+      notes:
+        type: string
+      pin_sender:
+        minLength: 6
+        type: string
+      receiver_id:
+        type: integer
+      receiver_phone:
+        type: string
+    required:
+    - amount
+    - pin_sender
+    - receiver_id
+    - receiver_phone
     type: object
   models.UnauthorizedResponse:
     properties:
@@ -541,6 +624,40 @@ paths:
       summary: Get user balance
       tags:
       - balance
+  /chart/{duration}:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan data chart keuangan pengguna yang sudah diautentikasi
+        (berdasarkan ID pengguna dari token JWT) dengan filter durasi tertentu.
+      parameters:
+      - description: 'Durasi filter data chart (contoh: ''seven_days'', ''five_weeks'',
+          ''twelve_months'')'
+        in: path
+        name: duration
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Data chart berhasil diambil
+          schema:
+            $ref: '#/definitions/models.ChartDataResponse'
+        "401":
+          description: Tidak terautentikasi (Unauthorized) - Token JWT tidak valid
+            atau hilang
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "500":
+          description: Kesalahan server internal
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
+      summary: Mendapatkan data chart berdasarkan durasi filter
+      tags:
+      - Chart
   /topup:
     post:
       consumes:
@@ -741,6 +858,85 @@ paths:
       summary: Soft delete topup
       tags:
       - topup
+  /transfer:
+    get:
+      consumes:
+      - application/json
+      description: Mendapatkan daftar pengguna dengan opsi pencarian dan paginasi.
+        Digunakan untuk memilih pengguna tujuan transfer.
+      parameters:
+      - description: Kata kunci pencarian nama atau nomor telepon
+        in: query
+        name: search
+        type: string
+      - description: 'Nomor halaman untuk paginasi (default: 1)'
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Daftar pengguna berhasil diambil
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.ResponseData'
+            - properties:
+                Data:
+                  $ref: '#/definitions/models.ListprofileResponse'
+              type: object
+        "401":
+          description: Tidak terautentikasi (Unauthorized) - Token JWT tidak valid
+            atau hilang
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "500":
+          description: Kesalahan server internal
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
+      summary: Memfilter daftar pengguna
+      tags:
+      - Transfer
+    post:
+      consumes:
+      - application/json
+      description: Melakukan proses transfer saldo dari pengguna yang terautentikasi
+        ke pengguna tujuan, memerlukan verifikasi PIN.
+      parameters:
+      - description: Detail transfer (ID penerima, jumlah, dan PIN pengirim)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TransferBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transfer berhasil
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 'Permintaan tidak valid (contoh: data binding gagal, PIN salah,
+            saldo tidak cukup, transfer ke diri sendiri)'
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Tidak terautentikasi (Unauthorized) - Token JWT tidak valid
+            atau hilang
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "500":
+          description: Kesalahan server internal
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
+      summary: Melakukan transfer saldo
+      tags:
+      - Transfer
 securityDefinitions:
   JWTtoken:
     in: header
