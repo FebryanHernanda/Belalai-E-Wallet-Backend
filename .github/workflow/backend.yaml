@@ -1,7 +1,7 @@
 name: Build and publish a Docker image to ghcr
 on:
   push:
-    branch:
+    branches:
       - main
       - development
 
@@ -17,3 +17,4 @@ jobs:
         with:
           image_name: ${{ github.repository }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          platforms: linux/amd64,linux/arm64
