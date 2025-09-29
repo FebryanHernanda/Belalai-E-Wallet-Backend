@@ -21,6 +21,18 @@ func NewTransferHandler(transRep *repository.TransferRepository) *TransferHandle
 	return &TransferHandler{transRep: transRep}
 }
 
+// @Summary Memfilter daftar pengguna
+// @Description Mendapatkan daftar pengguna dengan opsi pencarian dan paginasi. Digunakan untuk memilih pengguna tujuan transfer.
+// @Tags Transfer
+// @Accept json
+// @Produce json
+// @Param search query string false "Kata kunci pencarian nama atau nomor telepon"
+// @Param page query int false "Nomor halaman untuk paginasi (default: 1)"
+// @Success 200 {object} models.ResponseData{Data=models.ListprofileResponse} "Daftar pengguna berhasil diambil"
+// @Failure 401 {object} models.UnauthorizedResponse "Tidak terautentikasi (Unauthorized) - Token JWT tidak valid atau hilang"
+// @Failure 500 {object} models.InternalErrorResponse "Kesalahan server internal"
+// @Router /transfer [get]
+// @Security JWTtoken
 func (u *TransferHandler) FilterUser(ctx *gin.Context) {
 	// default get all user if query is empty
 	query := ctx.Query("search")
@@ -55,6 +67,18 @@ func (u *TransferHandler) FilterUser(ctx *gin.Context) {
 	})
 }
 
+// @Summary Melakukan transfer saldo
+// @Description Melakukan proses transfer saldo dari pengguna yang terautentikasi ke pengguna tujuan, memerlukan verifikasi PIN.
+// @Tags Transfer
+// @Accept json
+// @Produce json
+// @Param request body models.TransferBody true "Detail transfer (ID penerima, jumlah, dan PIN pengirim)"
+// @Success 200 {object} models.Response "Transfer berhasil"
+// @Failure 400 {object} models.ErrorResponse "Permintaan tidak valid (contoh: data binding gagal, PIN salah, saldo tidak cukup, transfer ke diri sendiri)"
+// @Failure 401 {object} models.UnauthorizedResponse "Tidak terautentikasi (Unauthorized) - Token JWT tidak valid atau hilang"
+// @Failure 500 {object} models.InternalErrorResponse "Kesalahan server internal"
+// @Router /transfer [post]
+// @Security JWTtoken
 func (u *TransferHandler) TranferBalance(ctx *gin.Context) {
 	// get user id from token
 	userID, err := utils.GetUserFromCtx(ctx)
