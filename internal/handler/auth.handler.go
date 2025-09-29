@@ -249,6 +249,7 @@ func (a *AuthHandler) Register(ctx *gin.Context) {
 // @Description Change the current user password by providing old password and new password
 // @Accept      json
 // @Produce     json
+// @Security    JWTtoken
 // @Param       body  body      models.ChangePasswordRequest true "Old and New Password"
 // @Success     200   {object}  models.Response
 // @Failure     400   {object}  models.BadRequestResponse "Bad Request"
@@ -347,6 +348,7 @@ func (a *AuthHandler) ChangePassword(ctx *gin.Context) {
 // @Description Change the current user PIN by providing old PIN and new PIN (min 6 characters)
 // @Accept      json
 // @Produce     json
+// @Security    JWTtoken
 // @Param       body  body      models.ChangePINRequest true "Old and New PIN"
 // @Success     200   {object}  models.Response
 // @Failure     400   {object}  models.BadRequestResponse "Bad Request"
@@ -445,6 +447,7 @@ func (a *AuthHandler) ChangePIN(ctx *gin.Context) {
 // @Description Update the current user PIN directly without old PIN (min 6 characters)
 // @Accept      json
 // @Produce     json
+// @Security    JWTtoken
 // @Param       body  body      models.SetPINRequest true "New PIN"
 // @Success     200   {object}  models.Response
 // @Failure     400   {object}  models.BadRequestResponse "Bad Request"
@@ -543,6 +546,17 @@ func (a *AuthHandler) Logout(ctx *gin.Context) {
 	}
 }
 
+// ForgotPassword
+// @Tags        auth
+// @Summary     Request password reset
+// @Description Send a reset password link with token to the user's email
+// @Accept      json
+// @Produce     json
+// @Param       body body models.ForgotPasswordOrPINRequest true "User email"
+// @Success     200 {object} models.Response
+// @Failure     400 {object} models.ErrorResponse "Invalid email format"
+// @Failure     500 {object} models.InternalErrorResponse "Internal Server Error"
+// @Router      /auth/forgot-password [post]
 func (a *AuthHandler) ForgotPassword(ctx *gin.Context) {
 	var body models.ForgotPasswordOrPINRequest
 	if err := ctx.ShouldBind(&body); err != nil {
@@ -608,6 +622,17 @@ func (a *AuthHandler) ForgotPassword(ctx *gin.Context) {
 	})
 }
 
+// ResetPassword
+// @Tags        auth
+// @Summary     Reset user password
+// @Description Reset user password using the token received via email
+// @Accept      json
+// @Produce     json
+// @Param       body body models.ResetPasswordRequest true "Token and new password"
+// @Success     200 {object} models.Response
+// @Failure     400 {object} models.ErrorResponse "Invalid or expired token"
+// @Failure     500 {object} models.InternalErrorResponse "Internal Server Error"
+// @Router      /auth/reset-password [post]
 func (a *AuthHandler) ResetPassword(ctx *gin.Context) {
 	var body models.ResetPasswordRequest
 	if err := ctx.ShouldBind(&body); err != nil {
@@ -680,6 +705,17 @@ func (a *AuthHandler) ResetPassword(ctx *gin.Context) {
 	})
 }
 
+// ForgotPIN
+// @Tags        auth
+// @Summary     Request PIN reset
+// @Description Send a reset PIN link with token to the user's email
+// @Accept      json
+// @Produce     json
+// @Param       body body models.ForgotPasswordOrPINRequest true "User email"
+// @Success     200 {object} models.Response
+// @Failure     400 {object} models.ErrorResponse "Invalid email format"
+// @Failure     500 {object} models.InternalErrorResponse "Internal Server Error"
+// @Router      /auth/forgot-pin [post]
 func (a *AuthHandler) ForgotPIN(ctx *gin.Context) {
 	var body models.ForgotPasswordOrPINRequest
 	if err := ctx.ShouldBind(&body); err != nil {
@@ -747,6 +783,17 @@ func (a *AuthHandler) ForgotPIN(ctx *gin.Context) {
 	})
 }
 
+// ResetPIN
+// @Tags        auth
+// @Summary     Reset user PIN
+// @Description Reset user PIN using the token received via email
+// @Accept      json
+// @Produce     json
+// @Param       body body models.ResetPINRequest true "Token and new_pin"
+// @Success     200 {object} models.Response
+// @Failure     400 {object} models.ErrorResponse "Invalid or expired token"
+// @Failure     500 {object} models.InternalErrorResponse "Internal Server Error"
+// @Router      /auth/reset-pin [post]
 func (a *AuthHandler) ResetPIN(ctx *gin.Context) {
 	var body models.ResetPINRequest
 	if err := ctx.ShouldBind(&body); err != nil {
@@ -818,6 +865,19 @@ func (a *AuthHandler) ResetPIN(ctx *gin.Context) {
 	})
 }
 
+// ConfirmPIN
+// @Tags        auth
+// @Summary     Confirm user PIN
+// @Description Verify user's PIN before processing a payment
+// @Security    JWTtoken
+// @Accept      json
+// @Produce     json
+// @Param       body body models.ConfirmPayment true "PIN confirmation"
+// @Success     200 {object} models.Response
+// @Failure     400 {object} models.ErrorResponse "Invalid request"
+// @Failure     401 {object} models.ErrorResponse "Invalid PIN or unauthorized"
+// @Failure     500 {object} models.InternalErrorResponse "Internal Server Error"
+// @Router      /auth/confirm-pin [post]
 func (a *AuthHandler) ConfirmPIN(ctx *gin.Context) {
 	userId, err := utils.GetUserFromCtx(ctx)
 	if err != nil {

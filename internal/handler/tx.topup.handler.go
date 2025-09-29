@@ -19,6 +19,17 @@ func NewTopUpHandler(topUpRepo *repository.TopUpRepository) *TopUpHandler {
 	return &TopUpHandler{topUpRepo: topUpRepo}
 }
 
+// GetPaymentMethods godoc
+// @Summary      Get available payment methods
+// @Description  Retrieve list of supported payment methods for topup
+// @Tags         TopUp
+// @Accept       json
+// @Produce      json
+// @Security     JWTtoken
+// @Success      200  {object}  models.ResponseData
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /topup/methods [get]
 func (th *TopUpHandler) GetPaymentMethods(c *gin.Context) {
 	methods, err := th.topUpRepo.FindAllPaymentMethods(c)
 	if err != nil {
@@ -165,6 +176,19 @@ func (th *TopUpHandler) MarkTopUpSuccess(c *gin.Context) {
 	})
 }
 
+// CreateTopUpTransaction godoc
+// @Summary      Create topup transaction
+// @Description  Create a new topup transaction with selected payment method
+// @Tags         TopUp
+// @Accept       json
+// @Produce      json
+// @Security     JWTtoken
+// @Param        request body models.TopUpRequest true "Topup request payload"
+// @Success      201  {object}  models.ResponseData
+// @Failure      400  {object}  models.ErrorResponse
+// @Failure      401  {object}  models.ErrorResponse
+// @Failure      500  {object}  models.ErrorResponse
+// @Router       /topup [post]
 func (th *TopUpHandler) CreateTopUpTransaction(c *gin.Context) {
 	var req models.TopUpRequest
 	if err := c.ShouldBind(&req); err != nil {

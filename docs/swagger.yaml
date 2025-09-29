@@ -50,6 +50,13 @@ definitions:
     - new_password
     - old_password
     type: object
+  models.ConfirmPayment:
+    properties:
+      pin:
+        type: string
+    required:
+    - pin
+    type: object
   models.ErrorResponse:
     properties:
       code:
@@ -67,6 +74,13 @@ definitions:
       page:
         example: 1
         type: integer
+    type: object
+  models.ForgotPasswordOrPINRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
     type: object
   models.InternalErrorResponse:
     properties:
@@ -91,6 +105,27 @@ definitions:
       is_success:
         example: false
         type: boolean
+    type: object
+  models.ResetPINRequest:
+    properties:
+      new_pin:
+        minLength: 6
+        type: string
+      token:
+        type: string
+    required:
+    - new_pin
+    - token
+    type: object
+  models.ResetPasswordRequest:
+    properties:
+      new_password:
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
     type: object
   models.Response:
     properties:
@@ -130,6 +165,18 @@ definitions:
         type: string
     required:
     - new_pin
+    type: object
+  models.TopUpRequest:
+    properties:
+      amount:
+        type: integer
+      payment_id:
+        type: integer
+      tax:
+        type: integer
+    required:
+    - amount
+    - payment_id
     type: object
   models.UnauthorizedResponse:
     properties:
@@ -231,6 +278,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
       summary: Change current user password
       tags:
       - auth
@@ -266,7 +315,165 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
       summary: Change current user PIN
+      tags:
+      - auth
+  /auth/confirm-pin:
+    post:
+      consumes:
+      - application/json
+      description: Verify user's PIN before processing a payment
+      parameters:
+      - description: PIN confirmation
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ConfirmPayment'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Invalid PIN or unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
+      summary: Confirm user PIN
+      tags:
+      - auth
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Send a reset password link with token to the user's email
+      parameters:
+      - description: User email
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ForgotPasswordOrPINRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Invalid email format
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      summary: Request password reset
+      tags:
+      - auth
+  /auth/forgot-pin:
+    post:
+      consumes:
+      - application/json
+      description: Send a reset PIN link with token to the user's email
+      parameters:
+      - description: User email
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ForgotPasswordOrPINRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Invalid email format
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      summary: Request PIN reset
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Reset user password using the token received via email
+      parameters:
+      - description: Token and new password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Invalid or expired token
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      summary: Reset user password
+      tags:
+      - auth
+  /auth/reset-pin:
+    post:
+      consumes:
+      - application/json
+      description: Reset user PIN using the token received via email
+      parameters:
+      - description: Token and new_pin
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ResetPINRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Invalid or expired token
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      summary: Reset user PIN
       tags:
       - auth
   /auth/update-pin:
@@ -300,6 +507,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
       summary: Update current user PIN directly
       tags:
       - auth
@@ -332,6 +541,67 @@ paths:
       summary: Get user balance
       tags:
       - balance
+  /topup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new topup transaction with selected payment method
+      parameters:
+      - description: Topup request payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.TopUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.ResponseData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - JWTtoken: []
+      summary: Create topup transaction
+      tags:
+      - TopUp
+  /topup/methods:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve list of supported payment methods for topup
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ResponseData'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - JWTtoken: []
+      summary: Get available payment methods
+      tags:
+      - TopUp
   /transaction/{id}:
     delete:
       consumes:
