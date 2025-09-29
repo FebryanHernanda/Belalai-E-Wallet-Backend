@@ -1,12 +1,15 @@
 package routers
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 
 	docs "github.com/Belalai-E-Wallet-Backend/docs"
 	"github.com/Belalai-E-Wallet-Backend/internal/middleware"
+	"github.com/Belalai-E-Wallet-Backend/internal/models"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -37,5 +40,14 @@ func InitRouter(db *pgxpool.Pool, rdb *redis.Client) *gin.Engine {
 
 	// make directori public accesible
 	router.Static("/img", "public")
+
+	router.NoRoute(func(ctx *gin.Context) {
+		ctx.JSON(http.StatusNotFound, models.Response{
+			IsSuccess: false,
+			Code:      http.StatusNotFound,
+			Msg:       "You wrong route!",
+		})
+	})
+
 	return router
 }
