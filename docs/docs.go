@@ -597,6 +597,170 @@ const docTemplate = `{
                 }
             }
         },
+        "/profile": {
+            "get": {
+                "security": [
+                    {
+                        "JWTtoken": []
+                    }
+                ],
+                "description": "Mengambil detail profil pengguna yang sedang login (berdasarkan ID dari token JWT).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Mendapatkan detail profil pengguna",
+                "responses": {
+                    "200": {
+                        "description": "Detail profil berhasil diambil",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/models.ResponseData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/models.ProfileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi (Unauthorized) - Token JWT tidak valid atau hilang",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Profil pengguna tidak ditemukan",
+                        "schema": {
+                            "$ref": "#/definitions/models.NotFoundResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "JWTtoken": []
+                    }
+                ],
+                "description": "Memperbarui nama lengkap, nomor telepon, email, dan/atau gambar profil pengguna yang sedang login.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Memperbarui detail profil pengguna",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nama lengkap pengguna",
+                        "name": "fullname",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nomor telepon pengguna",
+                        "name": "phone",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Alamat email pengguna (opsional)",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Gambar profil baru (format file)",
+                        "name": "profile_picture",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profil berhasil diperbarui",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Permintaan tidak valid (contoh: data form binding gagal, kesalahan upload file)",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi (Unauthorized) - Token JWT tidak valid atau hilang",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Kesalahan server internal",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/profile/avatar": {
+            "delete": {
+                "security": [
+                    {
+                        "JWTtoken": []
+                    }
+                ],
+                "description": "Menghapus gambar profil (avatar) pengguna yang sedang login.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Menghapus gambar profil",
+                "responses": {
+                    "200": {
+                        "description": "Gambar profil berhasil dihapus",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi (Unauthorized) - Token JWT tidak valid atau hilang",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Kesalahan server internal saat menghapus avatar",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/topup": {
             "post": {
                 "security": [
