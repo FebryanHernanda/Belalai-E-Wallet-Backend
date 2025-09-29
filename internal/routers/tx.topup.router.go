@@ -24,5 +24,4 @@ func InitTopUpRouter(router *gin.Engine, db *pgxpool.Pool, rdb *redis.Client) {
 	// 	"payment_id": 2
 	// }
 	topupRouter.POST("", middleware.VerifyToken(rdb), topupHandler.CreateTopUpTransaction)
-
 }
