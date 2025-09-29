@@ -13,7 +13,7 @@ import (
 // @title 											Belalai E-Wallet
 // @version 										1.0
 // @description 								E-wallet team belalai
-// @host												127.0.0.1:2409
+// @host												127.0.0.1:3000/api/
 // @securityDefinitions.apikey 	JWTtoken
 // @in header
 // @name Authorization
