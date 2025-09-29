@@ -52,6 +52,453 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JWTtoken": []
+                    }
+                ],
+                "description": "Logout user by blacklist their token on redis",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "logout"
+                ],
+                "summary": "Logout user by blacklist their token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/change-password": {
+            "patch": {
+                "description": "Change the current user password by providing old password and new password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change current user password",
+                "parameters": [
+                    {
+                        "description": "Old and New Password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/change-pin": {
+            "patch": {
+                "description": "Change the current user PIN by providing old PIN and new PIN (min 6 characters)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change current user PIN",
+                "parameters": [
+                    {
+                        "description": "Old and New PIN",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ChangePINRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/update-pin": {
+            "patch": {
+                "description": "Update the current user PIN directly without old PIN (min 6 characters)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Update current user PIN directly",
+                "parameters": [
+                    {
+                        "description": "New PIN",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SetPINRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/balance": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get balance for authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "balance"
+                ],
+                "summary": "Get user balance",
+                "responses": {
+                    "200": {
+                        "description": "Success Response with Balance Data",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseData"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.NotFoundResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/history": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get transaction history for authenticated user (excluding soft deleted) with pagination support",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "summary": "Get user transaction history with pagination",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success Response with Transaction History Data",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseData"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction History Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.NotFoundResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/history/all": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get complete transaction history including transfers and topups for authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "summary": "Get all user transaction history (transfer + topup)",
+                "responses": {
+                    "200": {
+                        "description": "Success Response with Complete Transaction History Data",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseData"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction History Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.NotFoundResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/topup/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Soft delete topup for authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "topup"
+                ],
+                "summary": "Soft delete topup",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Topup ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success Response",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Topup Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.NotFoundResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Soft delete transaction for authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "summary": "Soft delete transaction",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Transaction ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success Response",
+                        "schema": {
+                            "$ref": "#/definitions/models.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnauthorizedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.NotFoundResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.InternalErrorResponse"
+                        }
+                    }
+                }
             }
         }
     },
@@ -74,6 +521,9 @@
         "models.AuthResponse": {
             "type": "object",
             "properties": {
+                "is_pin_exist": {
+                    "type": "boolean"
+                },
                 "token": {
                     "type": "string"
                 }
@@ -96,6 +546,63 @@
                 }
             }
         },
+        "models.ChangePINRequest": {
+            "type": "object",
+            "required": [
+                "new_pin",
+                "old_pin"
+            ],
+            "properties": {
+                "new_pin": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "old_pin": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "models.ChangePasswordRequest": {
+            "type": "object",
+            "required": [
+                "new_password",
+                "old_password"
+            ],
+            "properties": {
+                "new_password": {
+                    "type": "string"
+                },
+                "old_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "error": {
+                    "type": "string",
+                    "example": "Error message..."
+                },
+                "is_success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Example message success..."
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "models.InternalErrorResponse": {
             "type": "object",
             "properties": {
@@ -106,6 +613,23 @@
                 "error": {
                     "type": "string",
                     "example": "Example Internal server error..."
+                },
+                "is_success": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "models.NotFoundResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 404
+                },
+                "error": {
+                    "type": "string",
+                    "example": "Not Found"
                 },
                 "is_success": {
                     "type": "boolean",
@@ -131,6 +655,57 @@
                 "page": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "models.ResponseData": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {},
+                "is_success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Example message success..."
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "models.SetPINRequest": {
+            "type": "object",
+            "required": [
+                "new_pin"
+            ],
+            "properties": {
+                "new_pin": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "models.UnauthorizedResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 401
+                },
+                "error": {
+                    "type": "string",
+                    "example": "Unauthorized : please login again..."
+                },
+                "is_success": {
+                    "type": "boolean",
+                    "example": false
                 }
             }
         }
