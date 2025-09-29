@@ -45,7 +45,7 @@ func InitRouter(db *pgxpool.Pool, rdb *redis.Client) *gin.Engine {
 		ctx.JSON(http.StatusNotFound, models.Response{
 			IsSuccess: false,
 			Code:      http.StatusNotFound,
-			Msg:       "You wrong route!",
+			Msg:       "Page not found!",
 		})
 	})
 
