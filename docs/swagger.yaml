@@ -658,6 +658,114 @@ paths:
       summary: Mendapatkan data chart berdasarkan durasi filter
       tags:
       - Chart
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil detail profil pengguna yang sedang login (berdasarkan
+        ID dari token JWT).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Detail profil berhasil diambil
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.ResponseData'
+            - properties:
+                Data:
+                  $ref: '#/definitions/models.ProfileResponse'
+              type: object
+        "401":
+          description: Tidak terautentikasi (Unauthorized) - Token JWT tidak valid
+            atau hilang
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "404":
+          description: Profil pengguna tidak ditemukan
+          schema:
+            $ref: '#/definitions/models.NotFoundResponse'
+      security:
+      - JWTtoken: []
+      summary: Mendapatkan detail profil pengguna
+      tags:
+      - Profile
+    patch:
+      consumes:
+      - multipart/form-data
+      description: Memperbarui nama lengkap, nomor telepon, email, dan/atau gambar
+        profil pengguna yang sedang login.
+      parameters:
+      - description: Nama lengkap pengguna
+        in: formData
+        name: fullname
+        required: true
+        type: string
+      - description: Nomor telepon pengguna
+        in: formData
+        name: phone
+        required: true
+        type: string
+      - description: Alamat email pengguna (opsional)
+        in: formData
+        name: email
+        type: string
+      - description: Gambar profil baru (format file)
+        in: formData
+        name: profile_picture
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profil berhasil diperbarui
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: 'Permintaan tidak valid (contoh: data form binding gagal, kesalahan
+            upload file)'
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Tidak terautentikasi (Unauthorized) - Token JWT tidak valid
+            atau hilang
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "500":
+          description: Kesalahan server internal
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
+      summary: Memperbarui detail profil pengguna
+      tags:
+      - Profile
+  /profile/avatar:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus gambar profil (avatar) pengguna yang sedang login.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Gambar profil berhasil dihapus
+          schema:
+            $ref: '#/definitions/models.Response'
+        "401":
+          description: Tidak terautentikasi (Unauthorized) - Token JWT tidak valid
+            atau hilang
+          schema:
+            $ref: '#/definitions/models.UnauthorizedResponse'
+        "500":
+          description: Kesalahan server internal saat menghapus avatar
+          schema:
+            $ref: '#/definitions/models.InternalErrorResponse'
+      security:
+      - JWTtoken: []
+      summary: Menghapus gambar profil
+      tags:
+      - Profile
   /topup:
     post:
       consumes:
