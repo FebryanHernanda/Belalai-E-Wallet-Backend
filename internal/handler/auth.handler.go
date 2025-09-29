@@ -223,8 +223,8 @@ func (a *AuthHandler) Register(ctx *gin.Context) {
 		go func() {
 			err := utils.Send(utils.SendOptions{
 				To:         []string{body.Email},
-				Subject:    "Welcome to E-Wallet!",
-				Body:       fmt.Sprintf("<h2>Hello %s!</h2><p>Terima kasih sudah mendaftar di E-Wallet.</p>", body.Email),
+				Subject:    "Welcome to Russel Pay!",
+				Body:       fmt.Sprintf("<h2>Hello %s!</h2><p>Terima kasih sudah mendaftar di Russel Pay.</p>", body.Email),
 				BodyIsHTML: true,
 			})
 			if err != nil {
